@@ -8,14 +8,13 @@ from tree_sitter import Language, Parser
 # -------------------------------
 # Tree-sitter setup
 # -------------------------------
-RUST_LANG = Language("my-languages.so", "rust")
-CPP_LANG = Language("my-languages.so", "cpp")
+RUST_LANG = Language("my-languages.so", b"rust")
+CPP_LANG = Language("my-languages.so", b"cpp")
 
 TS_LANGUAGES = {
     "rust": RUST_LANG,
     "cpp": CPP_LANG
 }
-
 # -------------------------------
 # Helper functions
 # -------------------------------
