@@ -1,43 +1,55 @@
+
 import ast
 import hashlib
-from pathlib import Path
-from typing import List, Dict
 import subprocess
-from tree_sitter import Language, Parser
+from pathlib import Path
+from typing import List, Dict, Optional
 
-# -------------------------------
-# Tree-sitter setup
-# -------------------------------
-RUST_LANG = Language("my-languages.so", b"rust")
-CPP_LANG = Language("my-languages.so", b"cpp")
+from tree_sitter import Parser
 
+# Tree-sitter language bindings (Python 3.13 safe)
+from tree_sitter_rust import language as rust_language
+from tree_sitter_cpp import language as cpp_language
+
+
+# --------------------------------
+# Tree-sitter language registry
+# --------------------------------
 TS_LANGUAGES = {
-    "rust": RUST_LANG,
-    "cpp": CPP_LANG
+    "rust": rust_language(),
+    "cpp": cpp_language(),
 }
-# -------------------------------
-# Helper functions
-# -------------------------------
+
+# Node types per language
+TS_TARGET_NODES = {
+    "rust": {"function_item", "struct_item", "impl_item"},
+    "cpp": {"function_definition", "class_specifier"},
+}
+
+
+# --------------------------------
+# Helpers
+# --------------------------------
 def compute_hash(content: str) -> str:
-    """Compute SHA256 hash of the given content"""
     return hashlib.sha256(content.encode("utf-8")).hexdigest()
 
-def get_latest_commit_hash(file_path: str) -> str:
-    """Get the latest git commit hash for a file"""
+
+def get_latest_commit_hash(file_path: str) -> Optional[str]:
     try:
         result = subprocess.run(
             ["git", "log", "-n", "1", "--pretty=format:%H", "--", str(file_path)],
             capture_output=True,
             text=True,
-            check=True
+            check=True,
         )
-        return result.stdout.strip()
-    except subprocess.CalledProcessError:
+        return result.stdout.strip() or None
+    except Exception:
         return None
 
-# -------------------------------
+
+# --------------------------------
 # RepoParser
-# -------------------------------
+# --------------------------------
 class RepoParser:
     def __init__(self, repo_name: str):
         self.repo_name = repo_name
@@ -49,142 +61,188 @@ class RepoParser:
     def parse_python(self, file_path: str, parent_chunk_map=None) -> List[Dict]:
         parent_chunk_map = parent_chunk_map or {}
         chunks = []
+
         with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
             source = f.read()
 
-        tree = ast.parse(source)
+        try:
+            tree = ast.parse(source)
+        except SyntaxError:
+            return []
+
+        lines = source.splitlines()
+
         for node in tree.body:
-            if isinstance(node, (ast.FunctionDef, ast.ClassDef)):
-                start_line = node.lineno
-                end_line = getattr(node, "end_lineno", node.lineno)
-                chunk_source = "\n".join(source.splitlines()[start_line - 1:end_line])
-                chunk_hash = compute_hash(chunk_source)
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                start = node.lineno
+                end = getattr(node, "end_lineno", start)
+                content = "\n".join(lines[start - 1 : end])
+                chunk_hash = compute_hash(content)
 
-                # Check for parent chunk ID if exists
-                parent_chunk_id = parent_chunk_map.get(chunk_hash)
+                chunks.append(
+                    self._build_chunk(
+                        file_path=file_path,
+                        chunk_id=len(chunks),
+                        start_line=start,
+                        end_line=end,
+                        content=content,
+                        chunk_hash=chunk_hash,
+                        parent_chunk_id=parent_chunk_map.get(chunk_hash),
+                        language="python",
+                        strategy="ast",
+                    )
+                )
 
-                chunks.append({
-                    "repo_name": self.repo_name,
-                    "file_path": str(file_path),
-                    "file_name": Path(file_path).name,
-                    "file_extension": Path(file_path).suffix,
-                    "chunk_id": len(chunks),
-                    "chunk_hash": chunk_hash,
-                    "commit_hash": get_latest_commit_hash(file_path),
-                    "parent_chunk_id": parent_chunk_id,
-                    "start_line": start_line,
-                    "end_line": end_line,
-                    "content": chunk_source,
-                    "metadata": {
-                        "language": "python",
-                        "role": "source",
-                        "parse_strategy": "ast",
-                        "service": None
-                    },
-                    "modified": parent_chunk_id is None,
-                    "tags": []
-                })
         return chunks
 
     # -----------------------------
-    # Tree-sitter parsing (Rust/C++)
+    # Tree-sitter parsing (Rust / C++)
     # -----------------------------
-    def parse_tree_sitter(self, file_path: str, language_name: str, parent_chunk_map=None) -> List[Dict]:
+    def parse_tree_sitter(self, file_path: str, language: str, parent_chunk_map=None) -> List[Dict]:
         parent_chunk_map = parent_chunk_map or {}
-        if language_name not in TS_LANGUAGES:
+
+        if language not in TS_LANGUAGES:
             return self.parse_raw(file_path, parent_chunk_map)
 
-        self.ts_parser.set_language(TS_LANGUAGES[language_name])
-        chunks = []
+        self.ts_parser.set_language(TS_LANGUAGES[language])
+
         with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
             source = f.read()
-        tree = self.ts_parser.parse(bytes(source, "utf8"))
 
-        # Traverse the tree and extract function / struct nodes
-        def walk(node, src_lines, chunks_list):
-            if node.type in ("function_item", "struct_item", "impl_item"):
-                start_line = node.start_point[0] + 1
-                end_line = node.end_point[0] + 1
-                chunk_source = "\n".join(src_lines[start_line - 1:end_line])
-                chunk_hash = compute_hash(chunk_source)
-                parent_chunk_id = parent_chunk_map.get(chunk_hash)
-                chunks_list.append({
-                    "repo_name": self.repo_name,
-                    "file_path": str(file_path),
-                    "file_name": Path(file_path).name,
-                    "file_extension": Path(file_path).suffix,
-                    "chunk_id": len(chunks_list),
-                    "chunk_hash": chunk_hash,
-                    "commit_hash": get_latest_commit_hash(file_path),
-                    "parent_chunk_id": parent_chunk_id,
-                    "start_line": start_line,
-                    "end_line": end_line,
-                    "content": chunk_source,
-                    "metadata": {
-                        "language": language_name,
-                        "role": "source",
-                        "parse_strategy": "tree-sitter",
-                        "service": None
-                    },
-                    "modified": parent_chunk_id is None,
-                    "tags": []
-                })
+        tree = self.ts_parser.parse(source.encode("utf-8"))
+        lines = source.splitlines()
+        chunks = []
+
+        def walk(node):
+            if node.type in TS_TARGET_NODES.get(language, set()):
+                start = node.start_point[0] + 1
+                end = node.end_point[0] + 1
+                content = "\n".join(lines[start - 1 : end])
+                chunk_hash = compute_hash(content)
+
+                chunks.append(
+                    self._build_chunk(
+                        file_path=file_path,
+                        chunk_id=len(chunks),
+                        start_line=start,
+                        end_line=end,
+                        content=content,
+                        chunk_hash=chunk_hash,
+                        parent_chunk_id=parent_chunk_map.get(chunk_hash),
+                        language=language,
+                        strategy="tree-sitter",
+                    )
+                )
+
             for child in node.children:
-                walk(child, src_lines, chunks_list)
+                walk(child)
 
-        src_lines = source.splitlines()
-        walk(tree.root_node, src_lines, chunks)
+        walk(tree.root_node)
         return chunks
 
     # -----------------------------
-    # Raw-text parsing (Markdown, SQL, unknown)
+    # Raw text fallback
     # -----------------------------
     def parse_raw(self, file_path: str, parent_chunk_map=None) -> List[Dict]:
         parent_chunk_map = parent_chunk_map or {}
+
         with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-            source = f.read()
-        lines = source.splitlines()
+            lines = f.read().splitlines()
+
         chunk_size = 500
         chunks = []
+
         for i in range(0, len(lines), chunk_size):
-            chunk_lines = lines[i:i + chunk_size]
-            chunk_source = "\n".join(chunk_lines)
-            chunk_hash = compute_hash(chunk_source)
-            parent_chunk_id = parent_chunk_map.get(chunk_hash)
-            chunks.append({
-                "repo_name": self.repo_name,
-                "file_path": str(file_path),
-                "file_name": Path(file_path).name,
-                "file_extension": Path(file_path).suffix,
-                "chunk_id": len(chunks),
-                "chunk_hash": chunk_hash,
-                "commit_hash": get_latest_commit_hash(file_path),
-                "parent_chunk_id": parent_chunk_id,
-                "start_line": i + 1,
-                "end_line": i + len(chunk_lines),
-                "content": chunk_source,
-                "metadata": {
-                    "language": "raw-text",
-                    "role": "source",
-                    "parse_strategy": "raw-text",
-                    "service": None
-                },
-                "modified": parent_chunk_id is None,
-                "tags": []
-            })
+            content = "\n".join(lines[i : i + chunk_size])
+            chunk_hash = compute_hash(content)
+
+            chunks.append(
+                self._build_chunk(
+                    file_path=file_path,
+                    chunk_id=len(chunks),
+                    start_line=i + 1,
+                    end_line=i + len(lines[i : i + chunk_size]),
+                    content=content,
+                    chunk_hash=chunk_hash,
+                    parent_chunk_id=parent_chunk_map.get(chunk_hash),
+                    language="raw-text",
+                    strategy="raw-text",
+                )
+            )
+
         return chunks
 
+    # -----------------------------
+    # Unified interface
+ 
     # -----------------------------
     # Main parser interface
     # -----------------------------
     def parse_file(self, metadata: Dict, parent_chunk_map=None) -> List[Dict]:
-        strategy = metadata.get("parse_strategy", "raw-text")
+        parent_chunk_map = parent_chunk_map or {}
+
         file_path = metadata["file_path"]
+        strategy = metadata.get("parse_strategy", "raw-text")
         language = metadata.get("language", "unknown")
 
         if strategy == "ast" and language == "python":
             return self.parse_python(file_path, parent_chunk_map)
+
         elif strategy == "tree-sitter":
             return self.parse_tree_sitter(file_path, language, parent_chunk_map)
+
         else:
             return self.parse_raw(file_path, parent_chunk_map)
+  # -----------------------------
+    # Chunk builder (single source of truth)
+    # -----------------------------
+    def _build_chunk(
+        self,
+        file_path: str,
+        chunk_id: int,
+        start_line: int,
+        end_line: int,
+        content: str,
+        chunk_hash: str,
+        parent_chunk_id: Optional[int],
+        language: str,
+        strategy: str,
+    ) -> Dict:
+        return {
+            "repo_name": self.repo_name,
+            "file_path": str(file_path),
+            "file_name": Path(file_path).name,
+            "file_extension": Path(file_path).suffix,
+            "chunk_id": chunk_id,
+            "chunk_hash": chunk_hash,
+            "commit_hash": get_latest_commit_hash(file_path),
+            "parent_chunk_id": parent_chunk_id,
+            "start_line": start_line,
+            "end_line": end_line,
+            "content": content,
+            "metadata": {
+                "language": language,
+                "role": "source",
+                "parse_strategy": strategy,
+                "service": None,
+            },
+            "modified": parent_chunk_id is None,
+            "tags": [],
+        }
+  
+    def parse_file(self, metadata: Dict, parent_chunk_map=None) -> List[Dict]:
+        parent_chunk_map = parent_chunk_map or {}
+
+        file_path = metadata["file_path"]
+        strategy = metadata.get("parse_strategy", "raw-text")
+        language = metadata.get("language", "unknown")
+
+        if strategy == "ast" and language == "python":
+            return self.parse_python(file_path, parent_chunk_map)
+
+        elif strategy == "tree-sitter":
+            return self.parse_tree_sitter(file_path, language, parent_chunk_map)
+
+        else:
+            return self.parse_raw(file_path, parent_chunk_map)
+

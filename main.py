@@ -32,7 +32,9 @@ def run_llm(repo_path: str):
     # --------------------------
     # 3. Scan repo
     # --------------------------
-    scanner = RepoScanner()
+
+    repo_path = "./my_project_repo"
+    scanner = RepoScanner(repo_path)
     files = scanner.local_scanner(repo_path)
     print(f"📂 Found {len(files)} files")
     if len(files) == 0:
@@ -59,15 +61,14 @@ def run_llm(repo_path: str):
     llm = OllamaClient()
     for i, chunk in enumerate(chunks):
         prompt = f"""
-You are a senior software engineer.
-Explain what this code does in detail:
-
-{chunk['content']}
-"""
+    You are a senior software engineer.
+    Explain what this code does in detail:
+    {chunk['content']}
+            """
         response = llm.generate(prompt)
         print(f"\n🧠 LLM OUTPUT FOR CHUNK {i+1}:\n")
         print(response)
-        # Only demo one chunk for brevity
+        # Only demo one chunk for b:revity
         if i == 0:
             break
 
