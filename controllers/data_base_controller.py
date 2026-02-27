@@ -37,3 +37,7 @@ class Postgres(DatabaseConnection):
         print("Connecting to PostgreSQL via Postgres subclass...")
         return super().connect()
 
+    def save_to_data_base(self):
+        pass
+    def remove_from_data_base(self):
+        pass

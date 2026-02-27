@@ -30,3 +30,7 @@ class RedisManager:
             print("Failed to connect to Redis")
             print(e)
             return None
+    def save_to_reddis(self):
+        pass 
+    def delete_from_reddis(self):
+        pass

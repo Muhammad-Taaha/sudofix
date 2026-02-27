@@ -4,12 +4,11 @@ from controllers.data_base_controller import Postgres
 from controllers.reddis_controller import RedisManager
 from controllers.repo_scanner import RepoScanner
 from parser.repo_parser import RepoParser
-from parser.chuncker.python_chuncker import PythonChunker
 from llm.ollama_client import OllamaClient
 import os
 
 def run_llm(repo_path: str):
-    print("🚀 Starting Repo-LLM pipeline")
+    print("\n🚀 Starting Repo-LLM pipeline")
 
     # --------------------------
     # 1. Database connection
@@ -30,50 +29,61 @@ def run_llm(repo_path: str):
     print("✅ Redis connected")
 
     # --------------------------
-    # 3. Scan repo
+    # 3. Scan & Parse Repo
     # --------------------------
-
-    repo_path = "./my_project_repo"
+    print(f"🔍 Scanning directory: {repo_path}")
     scanner = RepoScanner(repo_path)
-    files = scanner.local_scanner(repo_path)
-    print(f"📂 Found {len(files)} files")
-    if len(files) == 0:
-        print("⚠ No files found. Exiting...")
+    
+    # This method already calls RepoParser internally for every file
+    all_chunks = scanner.local_scanner() 
+    
+    if not all_chunks:
+        print("❌ No chunks were generated. Check if the directory contains supported files (Py, Rust, C++).")
         return
 
-    # --------------------------
-    # 4. Parse first file
-    # --------------------------
-    parser = RepoParser()
-    parsed_file = parser.parse_file(files[0])
-    print(f"🧩 Parsed file: {parsed_file['path']}")
+    print(f"📂 Total chunks found across all files: {len(all_chunks)}")
 
     # --------------------------
-    # 5. Chunk the file
-    # --------------------------
-    chunker = PythonChunker()
-    chunks = chunker.chunk(parsed_file)
-    print(f"🔹 Created {len(chunks)} chunks")
-
-    # --------------------------
-    # 6. Call LLM for each chunk (demo)
+    # 4. Process Chunks with LLM
     # --------------------------
     llm = OllamaClient()
-    for i, chunk in enumerate(chunks):
+    
+    # We will demonstrate with the first few chunks
+    for i, chunk in enumerate(all_chunks):
+        # The key is 'file_path' (from your RepoParser._build_chunk)
+        file_name = chunk.get('file_name', 'Unknown File')
+        content = chunk.get('content', '')
+
+        print(f"\n--- Processing Chunk {i+1} from {file_name} ---")
+        
+        if not content.strip():
+            print("⚠ Chunk has no content, skipping...")
+            continue
+
         prompt = f"""
-    You are a senior software engineer.
-    Explain what this code does in detail:
-    {chunk['content']}
-            """
-        response = llm.generate(prompt)
-        print(f"\n🧠 LLM OUTPUT FOR CHUNK {i+1}:\n")
-        print(response)
-        # Only demo one chunk for b:revity
+        You are a senior software engineer.
+        Explain what this code does in detail:
+        {content}
+        """
+
+        print(f"📡 Sending to Ollama (this may take a moment)...")
+        try:
+            response = llm.generate(prompt)
+            print(f"\n🧠 LLM OUTPUT:\n")
+            print(response)
+        except Exception as e:
+            print(f"❌ Error calling Ollama: {e}")
+
+        # BREAK after the first chunk for the demo. 
+        # Remove these lines to process the WHOLE repo.
         if i == 0:
+            print("\n⏹ Demo mode: Stopping after the first chunk.")
             break
 
 
 if __name__ == "__main__":
-    # Change this path to the repo you want to scan
-    repo_path = os.path.abspath(".")
-    run_llm(repo_path)
+    # Ensure we use an absolute path
+    target_repo = os.path.abspath(".") 
+    
+    # Check if a specific path was provided in the environment or use current dir
+    run_llm(target_repo)

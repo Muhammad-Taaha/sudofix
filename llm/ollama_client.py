@@ -5,12 +5,16 @@ class OllamaClient:
         self.model = model
         self.url = "http://localhost:11434/api/generate"
 
-    def generate(self, prompt: str) -> str:
+    def generate(self, prompt):
         payload = {
-            "model": self.model,
+            "model": "qwen2.5-coder:7b",
             "prompt": prompt,
             "stream": False
         }
-        response = requests.post(self.url, json=payload, timeout=120)
-        response.raise_for_status()
-        return response.json()["response"]
+        # Change timeout to None (wait forever) or a higher number like 300 (5 mins)
+        response = requests.post(
+            "http://localhost:11434/api/generate", 
+            json=payload, 
+            timeout=None  
+        )
+        return response.json().get("response")

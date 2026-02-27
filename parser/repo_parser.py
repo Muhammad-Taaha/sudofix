@@ -51,8 +51,8 @@ def get_latest_commit_hash(file_path: str) -> Optional[str]:
 # RepoParser
 # --------------------------------
 class RepoParser:
-    def __init__(self, repo_name: str):
-        self.repo_name = repo_name
+    def __init__(self, repo_path: str):
+        self.repo_path = repo_path
         self.ts_parser = Parser()
 
     # -----------------------------
@@ -209,7 +209,7 @@ class RepoParser:
         strategy: str,
     ) -> Dict:
         return {
-            "repo_name": self.repo_name,
+            "repo_name": self.repo_path,
             "file_path": str(file_path),
             "file_name": Path(file_path).name,
             "file_extension": Path(file_path).suffix,
