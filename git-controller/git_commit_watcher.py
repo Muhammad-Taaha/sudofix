@@ -1,4 +1,3 @@
-from controllers.git_commit_watcher import RepoScanner
 from collections import Stack 
 import subprocess
 '''

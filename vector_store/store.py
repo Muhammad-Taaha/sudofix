@@ -2,6 +2,7 @@ from typing import List, Dict
 import faiss
 import numpy as np
 
+
 class VectorStore:
     def __init__(self, embedder, dim: int):
         self.embedder = embedder

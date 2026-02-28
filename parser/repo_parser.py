@@ -4,7 +4,7 @@ import hashlib
 import subprocess
 from pathlib import Path
 from typing import List, Dict, Optional
-
+from .dependency_visitor import *
 from tree_sitter import Parser
 
 # Tree-sitter language bindings (Python 3.13 safe)
@@ -37,7 +37,8 @@ def compute_hash(content: str) -> str:
 def get_latest_commit_hash(file_path: str) -> Optional[str]:
     try:
         result = subprocess.run(
-            ["git", "log", "-n", "1", "--pretty=format:%H", "--", str(file_path)],
+            ["git", "log", "-n", "1", "--pretty=format:%H",
+                "--", str(file_path)],
             capture_output=True,
             text=True,
             check=True,
@@ -74,22 +75,29 @@ class RepoParser:
 
         for node in tree.body:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-                start = node.lineno
-                end = getattr(node, "end_lineno", start)
-                content = "\n".join(lines[start - 1 : end])
-                chunk_hash = compute_hash(content)
+                # --- NEW RELATIONAL LOGIC ---
+                visitor = DependencyVisitor()
+                visitor.visit(node)
+
+            # Extract signature for the database
+                signature = ""
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    args = [a.arg for a in node.args.args]
+                    signature = f"{node.name}({', '.join(args)})"
+
+            # ... existing line/content logic ...
 
                 chunks.append(
                     self._build_chunk(
-                        file_path=file_path,
-                        chunk_id=len(chunks),
-                        start_line=start,
-                        end_line=end,
-                        content=content,
-                        chunk_hash=chunk_hash,
-                        parent_chunk_id=parent_chunk_map.get(chunk_hash),
-                        language="python",
-                        strategy="ast",
+                        # ... existing fields ...
+                        entity_name=node.name,
+                        signature=signature,
+                        dependencies={
+                            "imports": list(set(visitor.imports)),
+                            "calls": list(set(visitor.calls))
+                        },
+                        role="class" if isinstance(
+                            node, ast.ClassDef) else "function"
                     )
                 )
 
@@ -117,7 +125,7 @@ class RepoParser:
             if node.type in TS_TARGET_NODES.get(language, set()):
                 start = node.start_point[0] + 1
                 end = node.end_point[0] + 1
-                content = "\n".join(lines[start - 1 : end])
+                content = "\n".join(lines[start - 1: end])
                 chunk_hash = compute_hash(content)
 
                 chunks.append(
@@ -153,7 +161,7 @@ class RepoParser:
         chunks = []
 
         for i in range(0, len(lines), chunk_size):
-            content = "\n".join(lines[i : i + chunk_size])
+            content = "\n".join(lines[i: i + chunk_size])
             chunk_hash = compute_hash(content)
 
             chunks.append(
@@ -161,7 +169,7 @@ class RepoParser:
                     file_path=file_path,
                     chunk_id=len(chunks),
                     start_line=i + 1,
-                    end_line=i + len(lines[i : i + chunk_size]),
+                    end_line=i + len(lines[i: i + chunk_size]),
                     content=content,
                     chunk_hash=chunk_hash,
                     parent_chunk_id=parent_chunk_map.get(chunk_hash),
@@ -174,7 +182,7 @@ class RepoParser:
 
     # -----------------------------
     # Unified interface
- 
+
     # -----------------------------
     # Main parser interface
     # -----------------------------
@@ -196,6 +204,7 @@ class RepoParser:
   # -----------------------------
     # Chunk builder (single source of truth)
     # -----------------------------
+
     def _build_chunk(
         self,
         file_path: str,
@@ -229,7 +238,7 @@ class RepoParser:
             "modified": parent_chunk_id is None,
             "tags": [],
         }
-  
+
     def parse_file(self, metadata: Dict, parent_chunk_map=None) -> List[Dict]:
         parent_chunk_map = parent_chunk_map or {}
 
@@ -245,4 +254,3 @@ class RepoParser:
 
         else:
             return self.parse_raw(file_path, parent_chunk_map)
-

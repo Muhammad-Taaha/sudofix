@@ -1,6 +1,5 @@
 from typing import List, Optional
 from pathlib import Path
-
 from parser.file_walker import RepoWalker
 from parser.detectors import FileDetector
 from parser.repo_parser import RepoParser
@@ -9,11 +8,9 @@ import os
 class RepoScanner:
     def __init__(self, repo_path: str):
         self.repo_path = Path(repo_path)
-
         self.walker = RepoWalker(self.repo_path)
         self.detector = FileDetector(repo_path)
         self.parser = RepoParser(repo_path)
-
     # -------------------------
     # 1 Local Scanner
     # -------------------------
@@ -73,3 +70,4 @@ class RepoScanner:
             parsed_chunks.extend(chunks)
 
         return parsed_chunks
+    
