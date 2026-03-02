@@ -30,7 +30,22 @@ class RedisManager:
             print("Failed to connect to Redis")
             print(e)
             return None
-    def save_to_reddis(self):
-        pass 
-    def delete_from_reddis(self):
-        pass
+    def save_to_reddis(self,chunk,response):
+        """
+            this is for the temp chuncking of the file 
+            if the user has just not closed the app it will 
+            not store the data in the persistant postgres sql 
+
+        """
+        """Saves data to Redis with a specific key."""
+        if not self.client:
+            self.connect()
+        
+        # Use self.client, not self.redis_db
+        # i am going to utelize the code as my key and reposnse as the data 
+        self.client.set(chunk,response)
+
+    def delete_from_redis(self, chunk , response):
+        """Deletes a specific key from Redis."""
+        if self.client:
+            return self.client.delete(chunk)

@@ -1,5 +1,5 @@
 from typing import List, Dict
-import faiss
+import faiss  # Facebook AI Similarity Search
 import numpy as np
 
 
@@ -29,3 +29,25 @@ class VectorStore:
                 results.append(self.metadatas[idx])
 
         return results
+        results = []
+
+        # FAISS returns -1 if it doesn't find enough matches
+        for idx in indices[0]:
+            if idx != -1 and idx < len(self.metadatas):
+                results.append(self.metadatas[idx])
+
+        return results
+
+    def save(self, folder_path: str):
+        # Save the vectors
+        faiss.write_index(self.index, f"{folder_path}/docs.index")
+        # Save the metadata (use pickle or json)
+        import pickle
+        with open(f"{folder_path}/metadata.pkl", "wb") as f:
+            pickle.dump(self.metadatas, f)
+
+    def load(self, folder_path: str):
+        self.index = faiss.read_index(f"{folder_path}/docs.index")
+        import pickle
+        with open(f"{folder_path}/metadata.pkl", "rb") as f:
+            self.metadatas = pickle.load(f)
