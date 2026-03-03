@@ -1,76 +1,81 @@
+import hashlib
 from controllers.reddis_controller import RedisManager
-from controllers.data_base_controller import Postgres
 from controllers.repo_scanner import RepoScanner, RepoWalker, RepoParser
 from vector_store.store import VectorStore
-from llm.ollama_client import ollama_client
+from llm.ollama_client import OllamaClient
 from git_controller.git_checker import Checker
-from controllers.reddis_controller import RedisManager
-# in this part i will deal with the orchasteration of the code with the llms so that the highest quality of the code is avaiable to me
 
 
 class CliAgent:
-    def __init__(self, repo_path: str, ):
-        # Ensure these are initialized correctly
-        self.parser = RepoParser(repo_path)
-        self.walker = RepoWalker(repo_path)
-        self.scanner = RepoScanner(repo_path)
-        self.vector_store = VectorStore()  # Ensure this auto-dims as discussed
-        self.llm = ollama_client()
+    def __init__(self, repo_path, command):
+        # We initialize these to use their internal logic
+        # Note: We don't need self.parser for building chunks anymore
+        self.repo_path = repo_path
+        self.vector_store = VectorStore()  # Ensure your Store class auto-dims
+        self.llm = OllamaClient()
         self.reddis_manager = RedisManager()
-        self.git_controller = Checker()
+        self.git_controller = Checker(command)
 
-    def _process_logic(self, chunk, task_prompt):
-        """Helper to handle the repetitive logic of checking, parsing, and LLM calls."""
-        # 1. Check Metadata
-        meta = self.parser._build_chunk().get("metadata", {})
-        if meta.get("language") != "Python":
+    def _process_logic(self, chunk_dict, task_prompt):
+        content = chunk_dict.get("content", "")
+        metadata = chunk_dict.get("metadata", {})
+        file_name = chunk_dict.get("file_name", "Unknown File")
+
+        # 🔍 DEBUG: See what the parser actually found
+        detected_lang = metadata.get("language", "EMPTY")
+        print(f"🔎 Checking {file_name} | Language: {detected_lang}")
+
+        # 2. Language Filter - Let's make it more flexible
+        if detected_lang.lower() not in ["python", "py"]:
+            print(f"❌ Skipping {file_name}: Not a Python file.")
             return None
 
-        # 2. Check Git Changes (Optimization)
-        if not self.git_controller.sync_git_changes(chunk):
-            print("No changes detected. Skipping...")
-            return None
+        # 4. LLM Interaction
+        print(f"📡 SENDING TO OLLAMA: {file_name} (This should take time...)")
+        prompt = f"{task_prompt}\n\nCode Content:\n{content}"
 
-        # 3. LLM Interaction
-        # Note: chunk should be a list of strings (functions/classes)
-        # If it's one big string, wrap it in a list: [chunk]
-        contents = chunk if isinstance(chunk, list) else [chunk]
-
-        for content in contents:
-            prompt = f"{task_prompt}\n\nCode:\n{content}"
+        try:
+            # If Ollama is working, it WILL be slow here
             response = self.llm.generate(prompt)
 
             if not response:
-                raise RuntimeError("LLM failed to generate a response.")
+                print(f"⚠️ LLM returned empty for {file_name}")
+                return None
 
-            print(f"\n🧠 LLM OUTPUT:\n{response}")
+            print(f"✅ LLM SUCCESS: Generated response for {file_name}")
 
-            # 4. Cache and Vectorize
-            self.caching_the_respone(content, response)
-            # Store the insight for future RAG
-            self.make_vector(content, response)
+            # 5. Persistence
+            self.caching_the_response(content, response)
+            self.make_vector(chunk_dict, response)
 
-        return True
+            return True
+        except:
+            print("failed to do the task")
 
-    def review_code(self, chunk):
-        prompt = "You are a senior engineer. Review this code for edge cases and architecture."
-        return self._process_logic(chunk, prompt)
+    def review_code(self, chunk_dict):
+        prompt = "You are a senior engineer. Review this code for edge cases, security, and architecture."
+        return self._process_logic(chunk_dict, prompt)
 
-    def generate_test(self, chunk):
-        prompt = "You are a senior engineer. Generate high-quality unit tests for this code."
-        return self._process_logic(chunk, prompt)
+    def generate_test(self, chunk_dict):
+        prompt = "You are a senior engineer. Generate high-quality unit tests using pytest for this code."
+        return self._process_logic(chunk_dict, prompt)
 
-    def generate_documentation(self, chunk):
-        prompt = "You are a senior engineer. Write professional technical documentation."
-        return self._process_logic(chunk, prompt)
+    def generate_documentation(self, chunk_dict):
+        prompt = "You are a senior engineer. Write professional technical documentation (docstrings and logic explanation)."
+        return self._process_logic(chunk_dict, prompt)
 
-    def caching_the_respone(self, chunk, response):
-        # We use a hash of the chunk as the key to avoid Redis collisions
-        import hashlib
-        key = hashlib.sha256(chunk.encode()).hexdigest()
+    def caching_the_response(self, content, response):
+        """Saves LLM output to Redis using a hash of the code as the key."""
+        key = hashlib.sha256(content.encode()).hexdigest()
         self.reddis_manager.save_to_reddis(key, response.strip())
 
-    def make_vector(self, chunk, response):
-        meta_data = self.parser._build_chunk()  # Ensure this returns a dict
-        # We store the response (the insight) associated with the code
-        self.vector_store.add([chunk], [{"response": response, **meta_data}])
+    def make_vector(self, chunk_dict, response):
+        """Stores the code and the AI insight in FAISS."""
+        # Enrich the existing dictionary with the AI's response
+        enriched_metadata = {
+            **chunk_dict,
+            "llm_insight": response
+        }
+
+        # We embed the original code, but store the AI insight alongside it
+        self.vector_store.add([chunk_dict["content"]], [enriched_metadata])

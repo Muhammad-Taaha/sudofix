@@ -87,20 +87,23 @@ class RepoParser:
 
             # ... existing line/content logic ...
 
+               # Inside parse_python loop:
                 chunks.append(
                     self._build_chunk(
-                        # ... existing fields ...
-                        entity_name=node.name,
-                        signature=signature,
-                        dependencies={
-                            "imports": list(set(visitor.imports)),
-                            "calls": list(set(visitor.calls))
-                        },
-                        role="class" if isinstance(
-                            node, ast.ClassDef) else "function"
+                        file_path=file_path,
+                        chunk_id=len(chunks),
+                        start_line=node.lineno,
+                        end_line=getattr(node, 'end_lineno', node.lineno),
+                        content="\n".join(
+                            lines[node.lineno-1: getattr(node, 'end_lineno', node.lineno)]),
+                        # Or hash just the node content
+                        chunk_hash=compute_hash(source),
+                        parent_chunk_id=parent_chunk_map.get(
+                            compute_hash(source)),
+                        language="python",
+                        strategy="ast"
                     )
                 )
-
         return chunks
 
     # -----------------------------
@@ -241,16 +244,17 @@ class RepoParser:
 
     def parse_file(self, metadata: Dict, parent_chunk_map=None) -> List[Dict]:
         parent_chunk_map = parent_chunk_map or {}
-
         file_path = metadata["file_path"]
-        strategy = metadata.get("parse_strategy", "raw-text")
-        language = metadata.get("language", "unknown")
+        suffix = Path(file_path).suffix.lower()
 
-        if strategy == "ast" and language == "python":
+    # 1. FORCE DETECTION based on extension
+        if suffix == ".py":
             return self.parse_python(file_path, parent_chunk_map)
 
-        elif strategy == "tree-sitter":
-            return self.parse_tree_sitter(file_path, language, parent_chunk_map)
+        elif suffix in [".rs", ".cpp", ".hpp", ".c"]:
+            lang_map = {".rs": "rust", ".cpp": "cpp",
+                        ".hpp": "cpp", ".c": "cpp"}
+            return self.parse_tree_sitter(file_path, lang_map[suffix], parent_chunk_map)
 
-        else:
-            return self.parse_raw(file_path, parent_chunk_map)
+    # 2. Fallback to raw text if it's not a supported code file
+        return self.parse_raw(file_path, parent_chunk_map)

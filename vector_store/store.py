@@ -1,13 +1,13 @@
 from typing import List, Dict
+from sentence_transformers import SentenceTransformer
 import faiss  # Facebook AI Similarity Search
 import numpy as np
 
-
 class VectorStore:
-    def __init__(self, embedder, dim: int):
-        self.embedder = embedder
-        self.dim = dim
-        self.index = faiss.IndexFlatL2(dim)
+    def __init__(self,embedder_name='all-MiniLM-L6-v2'):
+        self.embedder = SentenceTransformer(embedder_name)
+        self.dim = self.embedder.get_sentence_embedding_dimension()
+        self.index = faiss.IndexFlatL2(self.dim)
         self.metadatas: List[Dict] = []
 
     def add(self, texts: List[str], metadatas: List[Dict]):

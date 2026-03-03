@@ -1,0 +1,1 @@
+{b'opts.maxLenEvents': b'10000', b'version': b'bullmq:5.60.0'}

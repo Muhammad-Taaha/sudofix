@@ -1,7 +1,7 @@
 import os
 import redis
 from dotenv import load_dotenv
-
+import hashlib
 load_dotenv()
 
 class RedisManager:
@@ -9,7 +9,7 @@ class RedisManager:
         # Use passed values or fall back to .env/defaults
         self.redis_host = redis_host or os.getenv("REDIS_HOST", "localhost")
         self.redis_port = redis_port or int(os.getenv("REDIS_PORT", 6379))
-        self.redis_db = redis_db or int(os.getenv("REDIS_DB", 0))
+        self.redis_db = redis_db or int(os.getenv("REDIS_DB", 1))
         self.redis_password = redis_password or os.getenv("REDIS_PASSWORD", None)
         self.client = None
 
@@ -30,21 +30,18 @@ class RedisManager:
             print("Failed to connect to Redis")
             print(e)
             return None
-    def save_to_reddis(self,chunk,response):
-        """
-            this is for the temp chuncking of the file 
-            if the user has just not closed the app it will 
-            not store the data in the persistant postgres sql 
-
-        """
-        """Saves data to Redis with a specific key."""
-        if not self.client:
-            self.connect()
-        
-        # Use self.client, not self.redis_db
-        # i am going to utelize the code as my key and reposnse as the data 
-        self.client.set(chunk,response)
-
+    def caching_the_response(self, content, response):
+        """Saves LLM output to Redis using a hash of the code as the key."""
+        try:
+            # Generate the unique hash for the code content
+            key = hashlib.sha256(content.encode()).hexdigest()
+            
+            # Save to Redis (key=hash, value=ai_response)
+            self.reddis_manager.save_to_reddis(key, response.strip())
+            
+            print(f"   💾 [REDIS] Saved! Key (Hash): {key[:10]}...") 
+        except Exception as e:
+            print(f"   ❌ [REDIS] Save Failed: {e}")
     def delete_from_redis(self, chunk , response):
         """Deletes a specific key from Redis."""
         if self.client:
