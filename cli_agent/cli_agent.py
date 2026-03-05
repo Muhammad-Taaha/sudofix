@@ -1,9 +1,10 @@
-import hashlib
+import hashlib  # this is for the forming of the hash functions
 from controllers.reddis_controller import RedisManager
 from controllers.repo_scanner import RepoScanner, RepoWalker, RepoParser
 from vector_store.store import VectorStore
 from llm.ollama_client import OllamaClient
 from git_controller.git_checker import Checker
+import traceback
 
 
 class CliAgent:
@@ -71,11 +72,18 @@ class CliAgent:
 
     def make_vector(self, chunk_dict, response):
         """Stores the code and the AI insight in FAISS."""
-        # Enrich the existing dictionary with the AI's response
-        enriched_metadata = {
-            **chunk_dict,
-            "llm_insight": response
-        }
+        try:
+            # Enrich the existing dictionary with the AI's response
+            enriched_metadata = {
+                **chunk_dict,  # this is the code wich tells the chunk which is provided to the llm for the inference
+                "llm_insight": response
+            }
 
-        # We embed the original code, but store the AI insight alongside it
-        self.vector_store.add([chunk_dict["content"]], [enriched_metadata])
+            print(f"the vector of the file is {chunk_dict.get('file_name')} ")
+
+            # We embed the original code, but store the AI insight alongside it
+            self.vector_store.add([chunk_dict["content"]], [enriched_metadata])
+
+        except:
+
+            traceback.print_exc()

@@ -11,14 +11,14 @@ class VectorStore:
         self.metadatas: List[Dict] = []
 
     def add(self, texts: List[str], metadatas: List[Dict]):
-        vectors = self.embedder.embed(texts)
+        vectors = self.embedder.encode(texts)
         vectors = np.array(vectors).astype("float32")
 
         self.index.add(vectors)
         self.metadatas.extend(metadatas)
 
     def query(self, text: str, top_k: int = 5):
-        vector = self.embedder.embed([text])[0]
+        vector = self.embedder.encode([text])[0]
         vector = np.array([vector]).astype("float32")
 
         distances, indices = self.index.search(vector, top_k)
