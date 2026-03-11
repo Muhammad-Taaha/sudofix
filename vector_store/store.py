@@ -11,12 +11,23 @@ class VectorStore:
         self.metadatas: List[Dict] = []
 
     def add(self, texts: List[str], metadatas: List[Dict]):
-        vectors = self.embedder.encode(texts)
-        vectors = np.array(vectors).astype("float32")
-
-        self.index.add(vectors)
-        self.metadatas.extend(metadatas)
-
+            # 1. Generate the embeddings
+            vectors = self.embedder.encode(texts)
+            
+            # 2. Convert to numpy array
+            vectors = np.array(vectors).astype("float32")
+    
+            # 3. FIX: Ensure the array is 2D (FAISS 'x' parameter requirement)
+            # If texts has 1 item, vectors might be (384,). FAISS needs (1, 384)
+            if len(vectors.shape) == 1:
+                vectors = vectors.reshape(1, -1)
+    
+            # 4. FIX: Ensure C-contiguous layout (Required by FAISS C++ backend)
+            vectors = np.ascontiguousarray(vectors)
+    
+            # 5. Add to index
+            self.index.add(vectors)
+            self.metadatas.extend(metadatas)
     def query(self, text: str, top_k: int = 5):
         vector = self.embedder.encode([text])[0]
         vector = np.array([vector]).astype("float32")

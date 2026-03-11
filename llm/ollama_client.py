@@ -2,13 +2,13 @@ import requests
 
 
 class OllamaClient:
-    def __init__(self, model="qwen2.5-coder:7b"):
+    def __init__(self, model="qwen2.5-coder:7b-instruct-q2_K"): #using the quantized model for the better time 
         self.model = model
         self.url = "http://localhost:11434/api/generate"
 
     def generate(self, prompt):
         payload = {
-            "model": "qwen2.5-coder:7b",
+            "model": self.model,
             "prompt": prompt,
             "stream": False
         }

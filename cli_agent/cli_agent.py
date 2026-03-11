@@ -15,6 +15,7 @@ class CliAgent:
         self.vector_store = VectorStore()  # Ensure your Store class auto-dims
         self.llm = OllamaClient()
         self.reddis_manager = RedisManager()
+        self.redis_client = self.reddis_manager.connect()
         self.git_controller = Checker(command)
 
     def _process_logic(self, chunk_dict, task_prompt):
@@ -47,8 +48,9 @@ class CliAgent:
 
             # 5. Persistence
             self.caching_the_response(content, response)
+            print("Saved to the reddis")
             self.make_vector(chunk_dict, response)
-
+            print("Made the vector embedding")
             return True
         except:
             print("failed to do the task")
@@ -83,7 +85,11 @@ class CliAgent:
 
             # We embed the original code, but store the AI insight alongside it
             self.vector_store.add([chunk_dict["content"]], [enriched_metadata])
-
+            save_dir = "vector_store"
+            self.vector_store.save(save_dir)
+                        
+            print(f"✅ Vector Store updated and saved to {save_dir}/")
         except:
 
             traceback.print_exc()
+            return None

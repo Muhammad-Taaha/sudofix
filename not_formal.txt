@@ -1,0 +1,571 @@
+
+================================================================================
+PROJECT RESEARCH DIARY
+================================================================================
+
+This file is a personal research scratchpad where I dump notes, ideas,
+paper summaries, and technical observations related to the project.
+
+================================================================================
+MODEL INFORMATION
+================================================================================
+
+Model: Qwen2.5-Coder-7B-Instruct
+Variant: q2_K GGUF (2-bit quantization)
+Knowledge Cutoff: Mid-2024
+
+The Qwen2.5-Coder-7B-Instruct model is part of Alibaba's Qwen2.5 series
+of specialized coding LLMs.
+
+The q2_K GGUF version is an extremely compressed quantized variant
+designed for local deployment.
+
+Because it uses 2-bit quantization, the model suffers from significant
+precision loss which leads to:
+
+- High hallucination rates
+- Weak reasoning ability
+- Reduced coding reliability
+- "Brain-damaged" behaviour compared to higher precision models
+
+This version should mainly be used for experimentation or lightweight
+local inference.
+
+================================================================================
+HALLUCINATION BEHAVIOR
+================================================================================
+
+Due to aggressive quantization (Q2_K):
+
+• Token probability distributions become unstable  
+• Attention weights lose precision  
+• Logical reasoning degrades significantly  
+
+Observed issues:
+
+- Fabricated APIs
+- Incorrect imports
+- Non-existent libraries
+- Wrong algorithm implementations
+- Broken code suggestions
+
+This makes hallucination mitigation a potential research direction.
+
+================================================================================
+Qwen2.5-Coder Technical Report (arXiv:2409.12186)
+================================================================================
+
+Paper Title:
+Qwen2.5-Coder Technical Report
+
+This paper introduces a specialized family of Large Language Models
+optimized for programming tasks.
+
+--------------------------------------------------------------------------------
+1. Core Objective
+--------------------------------------------------------------------------------
+
+The goal of the project was to build open-source coding models that
+match or surpass closed-source models while remaining deployable
+locally.
+
+The models are intended to compete with large proprietary coding
+assistants.
+
+--------------------------------------------------------------------------------
+2. Model Architecture
+--------------------------------------------------------------------------------
+
+Architecture Type:
+Dense Transformer (Decoder-Only)
+
+Model Sizes:
+
+• 0.5B parameters
+• 1.5B parameters
+• 3B parameters
+• 7B parameters
+• 14B parameters
+• 32B parameters
+
+Context Length:
+128K tokens
+
+Training Dataset:
+5.5 Trillion tokens
+
+Data mixture includes:
+
+• Programming code
+• Mathematics
+• General text
+
+--------------------------------------------------------------------------------
+3. Architecture Details (Selected Configurations)
+--------------------------------------------------------------------------------
+
+Hidden Size
+1536 (small models)
+3584 (7B model)
+
+Layers
+28
+
+Query Heads
+12 / 28
+
+KV Heads
+2 / 4
+
+Head Size
+128
+
+Intermediate Size
+8960 / 18944
+
+Embedding Tying
+True / False
+
+Vocabulary Size
+151,646 tokens
+
+Total Training Tokens
+5.5 Trillion
+
+--------------------------------------------------------------------------------
+4. Training Methodology
+--------------------------------------------------------------------------------
+
+Pre-training:
+
+A balanced mixture of:
+
+• Code
+• Mathematical data
+• General language
+
+Goal:
+Maintain strong reasoning ability while specializing in coding.
+
+Instruction Tuning:
+
+Fine-tuned using high-quality coding datasets.
+
+Training data included:
+
+• coding problems
+• verified solutions
+• synthetic examples
+
+Verification method:
+
+Multilingual execution sandbox used to validate generated code.
+
+--------------------------------------------------------------------------------
+5. Performance
+--------------------------------------------------------------------------------
+
+The models were evaluated on 10+ coding benchmarks.
+
+Examples include:
+
+• HumanEval
+• MBPP
+• others
+
+The Qwen2.5-Coder-32B model reaches performance comparable to
+state-of-the-art proprietary coding models.
+
+Supported languages:
+
+40+ programming languages
+
+Capabilities include:
+
+• Code generation
+• Code completion
+• Bug fixing
+• Code reasoning
+
+--------------------------------------------------------------------------------
+6. Conclusion
+--------------------------------------------------------------------------------
+
+Qwen2.5-Coder models aim to bridge the gap between:
+
+• small deployable models
+• large high-performance coding assistants
+
+The models are released under a permissive license to enable
+local private coding AI systems.
+
+================================================================================
+TRANSFORMER TRAINING MECHANICS
+================================================================================
+
+Qwen2.5-Coder follows the standard architecture of an
+Autoregressive Decoder-Only Transformer.
+
+--------------------------------------------------------------------------------
+Forward Pass
+--------------------------------------------------------------------------------
+
+The forward pass converts input tokens into probability
+distributions over the vocabulary.
+
+Steps:
+
+1. Tokenization
+Text/code converted into tokens using TikToken-style tokenizer.
+
+Vocabulary size:
+~151k tokens
+
+2. Embedding
+Tokens converted to high-dimensional vectors.
+
+3. Rotary Positional Embeddings (RoPE)
+
+Used for encoding token position.
+
+Allows long-context reasoning up to 128K tokens.
+
+4. Attention Mechanism
+
+Grouped Query Attention (GQA)
+
+Multiple query heads share key/value heads.
+
+Benefits:
+
+• reduces memory usage
+• speeds inference
+
+5. Feed Forward Network
+
+Activation function:
+
+SwiGLU
+
+Benefits:
+
+• better gradient flow
+• improved representation power
+
+6. Normalization
+
+RMSNorm (pre-norm)
+
+Improves numerical stability in large models.
+
+--------------------------------------------------------------------------------
+Backward Pass
+--------------------------------------------------------------------------------
+
+Used during training to update model weights.
+
+Loss Function:
+
+Cross-Entropy Loss
+
+Task:
+
+Next-Token Prediction
+
+Steps:
+
+1. Calculate prediction error
+2. Backpropagate gradients
+3. Update weights using optimizer
+
+Precision:
+
+Bfloat16
+
+Benefits:
+
+• float32 dynamic range
+• float16 memory efficiency
+
+Optimizer:
+
+AdamW
+
+================================================================================
+LONG CONTEXT OPTIMIZATION
+================================================================================
+
+Handling 128K tokens requires special attention optimizations.
+
+Techniques used:
+
+• FlashAttention-2
+• KV-Cache memory optimization
+• Grouped Query Attention
+
+Without these optimizations the attention complexity:
+
+O(n²)
+
+would be too expensive.
+
+================================================================================
+FINE-TUNING VALIDATION
+================================================================================
+
+During instruction tuning:
+
+Generated code is executed inside a sandbox environment.
+
+If the code fails:
+
+• the training example may be filtered
+• reinforcement signals may penalize incorrect outputs
+
+This improves model reliability.
+
+================================================================================
+FUTURE PROJECT IDEA
+================================================================================
+
+Potential research direction:
+
+Graph-based Retrieval Augmented Generation (Graph-RAG)
+
+Goal:
+
+Improve repository understanding by building structured
+graph representations of codebases.
+
+Possible graph nodes:
+
+• files
+• functions
+• classes
+• commits
+• dependencies
+
+Edges could represent:
+
+• imports
+• function calls
+• inheritance
+• commit relationships
+
+Benefits:
+
+• improved code reasoning
+• reduced hallucinations
+• better repository navigation
+
+================================================================================
+LLM CODING RESEARCH BENCHMARKS
+================================================================================
+
+HumanEval
+
+Purpose:
+Evaluate code generation ability.
+
+Task:
+Generate Python functions from docstrings.
+
+Dataset size:
+164 problems
+
+Metric:
+Pass@k
+
+--------------------------------------------------------------------------------
+
+MBPP
+
+Purpose:
+Test beginner programming ability.
+
+Task:
+Generate Python code from natural language problems.
+
+Dataset size:
+~1000 tasks
+
+Metric:
+Test case accuracy
+
+--------------------------------------------------------------------------------
+
+CodeXGLUE
+
+Large benchmark suite for code intelligence.
+
+Tasks include:
+
+• code generation
+• code translation
+• code summarization
+• defect detection
+• clone detection
+• code search
+
+Metrics:
+
+• BLEU
+• Accuracy
+• F1
+
+--------------------------------------------------------------------------------
+
+APPS Benchmark
+
+Purpose:
+Evaluate competitive programming ability.
+
+Dataset size:
+~10,000 problems
+
+Difficulty levels:
+
+• Introductory
+• Interview
+• Competition
+
+Metric:
+Test case pass rate
+
+--------------------------------------------------------------------------------
+
+SWE-Bench
+
+Purpose:
+Evaluate real-world software engineering tasks.
+
+Tasks:
+
+• read bug reports
+• understand repositories
+• modify code to fix bugs
+
+Metric:
+
+Repository test pass rate
+
+--------------------------------------------------------------------------------
+
+CodeReviewBench
+
+Purpose:
+Evaluate automated code review ability.
+
+Tasks:
+
+• detect bugs
+• suggest improvements
+• review pull requests
+
+Metric:
+Bug detection accuracy
+
+--------------------------------------------------------------------------------
+
+MultiPL-E
+
+Purpose:
+Evaluate multilingual code generation.
+
+Languages include:
+
+• Python
+• Java
+• C++
+• Go
+• Rust
+
+Metric:
+Pass@k
+
+--------------------------------------------------------------------------------
+
+DS-1000
+
+Purpose:
+Evaluate data science programming tasks.
+
+Libraries used:
+
+• NumPy
+• Pandas
+• Matplotlib
+• SciPy
+
+Dataset size:
+1000 problems
+
+Metric:
+Execution accuracy
+
+--------------------------------------------------------------------------------
+
+RepoBench
+
+Purpose:
+Evaluate repository-level reasoning.
+
+Tasks:
+
+• cross-file reasoning
+• code completion
+• repository understanding
+
+Metric:
+Accuracy / retrieval performance
+
+--------------------------------------------------------------------------------
+
+CRUXEval
+
+Purpose:
+Evaluate program reasoning.
+
+Tasks:
+
+• predict code output
+• understand program behavior
+
+Metric:
+Execution correctness
+
+================================================================================
+COMMON METRICS IN CODE LLM RESEARCH
+================================================================================
+
+Pass@k
+Probability that at least one generated solution passes test cases.
+
+Execution Accuracy
+Whether generated code runs successfully.
+
+BLEU Score
+Measures similarity between generated code and reference code.
+
+F1 Score
+Used in classification tasks such as bug detection.
+
+Compilation Rate
+Percentage of generated programs that compile successfully.
+
+================================================================================
+IMPORTANT BENCHMARKS FOR REPO-AWARE LLM RESEARCH
+================================================================================
+
+SWE-Bench
+Real-world bug fixing
+
+RepoBench
+Repository reasoning
+
+CodeXGLUE
+Multi-task code intelligence
+
+================================================================================
+END OF NOTES
+================================================================================

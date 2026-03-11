@@ -8,7 +8,7 @@ from llm.ollama_client import OllamaClient
 import os
 import argparse
 import sys #this is for the grace-ful shut down 
-
+import hashlib
 
 def run_llm(repo_path: str, command):
     print("\n🚀 Starting Repo-LLM pipeline")
@@ -54,7 +54,11 @@ def run_llm(repo_path: str, command):
         agent = CliAgent(repo_path, command)
 
         for chunk in all_chunks:
-
+            
+            content_hash = hashlib.sha256(chunk['content'].encode()).hexdigest()
+            if redis_client.get(content_hash):
+                            print(f"⏩ Skipping {chunk['file_name']}: Already in Cache")
+                            continue
             # graceful stop check
             user_input = input("Press Enter to continue or q to quit: ")
 
@@ -64,13 +68,13 @@ def run_llm(repo_path: str, command):
 
             if command == "review":
                 agent.review_code(chunk)
-
+                
             elif command == "test":
                 agent.generate_test(chunk)
-
+                
             elif command == "doc":
                 agent.generate_documentation(chunk)
-
+                        
     except KeyboardInterrupt:
         print("\n⚠️ Interrupt received. Shutting down safely...")
 
