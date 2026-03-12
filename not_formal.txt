@@ -9,7 +9,6 @@ paper summaries, and technical observations related to the project.
 ================================================================================
 MODEL INFORMATION
 ================================================================================
-
 Model: Qwen2.5-Coder-7B-Instruct
 Variant: q2_K GGUF (2-bit quantization)
 Knowledge Cutoff: Mid-2024
@@ -565,6 +564,12 @@ Repository reasoning
 
 CodeXGLUE
 Multi-task code intelligence
+
+--------------------------------------------------------------------------------
+
+**First we will do this repo-aware-llm task and then we will do the SCA part.**  
+
+--------------------------------------------------------------------------------
 
 ================================================================================
 END OF NOTES

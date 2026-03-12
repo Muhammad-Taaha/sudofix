@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS doc_history (
     doc_content TEXT,
     generated_at TIMESTAMP DEFAULT NOW(),
     model TEXT, -- LLM used
+    task_type TEXT,
     version_number INT DEFAULT 1
 );
 

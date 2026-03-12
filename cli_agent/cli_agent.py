@@ -5,7 +5,7 @@ from vector_store.store import VectorStore
 from llm.ollama_client import OllamaClient
 from git_controller.git_checker import Checker
 import traceback
-
+from controllers.data_base_controller import Postgres
 
 class CliAgent:
     def __init__(self, repo_path, command):
@@ -17,6 +17,7 @@ class CliAgent:
         self.reddis_manager = RedisManager()
         self.redis_client = self.reddis_manager.connect()
         self.git_controller = Checker(command)
+        self.data_base = Postgres()
 
     def _process_logic(self, chunk_dict, task_prompt):
         content = chunk_dict.get("content", "")
@@ -52,7 +53,7 @@ class CliAgent:
             self.make_vector(chunk_dict, response)
             print("Made the vector embedding")
             return True
-        except:
+        except :
             print("failed to do the task")
 
     def review_code(self, chunk_dict):
