@@ -20,6 +20,9 @@ class RepoScanner:
         excluded_files = {'.env', 'package-lock.json', 'yarn.lock', '.gitignore'}
         excluded_dirs = {'.git', '__pycache__', 'node_modules', 'venv', '.venv'}
         for file_path in files:
+            if not os.path.exists(file_path): # this is for checking if we have changed the file path or not 
+                print(f"⚠️ Warning: File not found on disk, skipping: {file_path}")
+                continue
             # Convert to absolute path if it isn't already
             if file_path in  excluded_files or any(d in file_path for d in excluded_dirs):
                 continue
