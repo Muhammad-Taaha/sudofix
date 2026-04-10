@@ -1,6 +1,8 @@
 from controllers.repo_scanner import RepoScanner
 from vector_store.store import VectorStore
 from llm.ollama_client import OllamaClient
+# main function
+
 
 class RepoPipeline:
     def __init__(self, repo_path: str):
