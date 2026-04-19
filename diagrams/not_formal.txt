@@ -543,7 +543,7 @@ Probability that at least one generated solution passes test cases.
 Execution Accuracy
 Whether generated code runs successfully.
 
-BLEU Score
+BLEU Score                                                            
 Measures similarity between generated code and reference code.
 
 F1 Score

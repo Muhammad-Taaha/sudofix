@@ -1,6 +1,5 @@
 import os
 import argparse
-import sys
 import hashlib
 from cli_agent.cli_agent import CliAgent
 from controllers.data_base_controller import Postgres
@@ -13,9 +12,9 @@ def run_llm(repo_path: str, command: str):
     # Initialize Controllers
     db = Postgres()
     cache = RedisManager()
-    
+
     # Established connections
-    db_conn = db.connect() # Required to check if DB is alive
+    db_conn = db.connect()  
     redis_client = cache.connect()
 
     if not db_conn or not redis_client:
@@ -24,7 +23,6 @@ def run_llm(repo_path: str, command: str):
 
     try:
         # 1. Sync the repository structure to Postgres
-        # This ensures files and code_entities exist before we try to link insights
         print("🔄 Syncing repository structure to Database...")
         db.sync_repo_to_db(repo_path)
 
@@ -39,12 +37,19 @@ def run_llm(repo_path: str, command: str):
         print(f"📂 Total chunks to evaluate: {len(all_chunks)}")
         agent = CliAgent(repo_path, command)
 
+        # We need the repo_id for lookups
+        repo_name = os.path.basename(repo_path)
+        repo_data = db.save_repository(repo_name, repo_path)
+        repo_id = repo_data[0]['id']
+
         for chunk in all_chunks:
             content = chunk.get('content', '')
-            file_name = os.path.basename(chunk.get('file_path', 'unknown'))
-            
+            file_path = chunk.get('file_path')
+            file_name = os.path.basename(file_path if file_path else 'unknown')
+
             # Generate unique hash for the Specific Content + Specific Task
-            content_hash = hashlib.sha256(f"{command}:{content}".encode()).hexdigest()
+            content_hash = hashlib.sha256(
+                f"{command}:{content}".encode()).hexdigest()
 
             # CHECK REDIS CACHE (Fast skip)
             if redis_client.get(content_hash):
@@ -58,29 +63,39 @@ def run_llm(repo_path: str, command: str):
                 print("🛑 Shutdown requested by user.")
                 break
 
-            # 3. EXECUTE COMMAND
+            # 3. EXECUTE LLM COMMAND
             result = ""
             try:
-                # FIXED
                 if command == "review":
-                    result = agent.review_code(chunk) # Pass the whole chunk dict
+                    result = agent.review_code(chunk)
                 elif command == "test":
                     result = agent.generate_test(chunk)
                 elif command == "doc":
-                    result = agent.generate_documentation(chunk)            
+                    result = agent.generate_documentation(chunk)
+                
+                if not result:
+                    print(f"⚠️ Warning: LLM returned empty result for {file_name}")
+                    continue
+                    
             except Exception as e:
                 print(f"❌ LLM Error: {e}")
                 continue
 
             # 4. SAVE TO POSTGRES
-            # We must find the ID assigned by Postgres during the sync step
-            # Assuming your scanner/parser provides the entity name or specific hash
-            entity_name = chunk['metadata'].get('name', 'anonymous_block')
-            entity_hash = chunk['metadata'].get('hash')
+            # Look up the ID based on the file path to find the 'file_root' entity
+           # 4. SAVE TO POSTGRES
+            # Use the absolute path if that's what's in the DB, or normalize it
+            normalized_path = str(file_path) 
+            file_record = db._get_file_by_path(repo_id, normalized_path)
             
-            # Helper to find the database ID for the code we just processed
-            entity_id = db.get_entity_id_by_hash(entity_hash) 
-            
+            entity_id = None
+            if file_record:
+                # 🔍 DEBUG: print(f"Found file_id: {file_record['id']} for {file_name}")
+                sql = "SELECT id FROM code_entities WHERE file_id = %s AND type = 'file_root' LIMIT 1;"
+                ent_res = db._execute_query(sql, (file_record['id'],), fetch=True)
+                if ent_res:
+                    entity_id = ent_res[0]['id']
+
             if entity_id:
                 db.save_ai_insight(
                     entity_id=entity_id,
@@ -88,18 +103,23 @@ def run_llm(repo_path: str, command: str):
                     task_type=command,
                     model="qwen-7b"
                 )
-                print(f"💾 Insight saved to Postgres (ID: {entity_id})")
-
-            # 5. UPDATE REDIS CACHE
-            redis_client.set(content_hash, "completed", ex=86400) # 24h expiry
-            print(f"✅ Cache updated for {file_name}")
-
+                print(f"✅ Saved to Postgres for entity {entity_id}")
+                
+                # 5. UPDATE REDIS CACHE (Only if DB save succeeded)
+                redis_client.set(content_hash, "completed", ex=86400)
+                print(f"✅ Cache updated for {file_name}")
+            else:
+                # 🛠️ HELPER: If entity is missing, it's likely a sync issue
+                print(f"❌ Database Error: Could not find entity ID for {file_name}.")
+                print(f"   (Hint: Ensure 'code_entities' has a row for file_id {file_record['id'] if file_record else 'NOT FOUND'})")
     except KeyboardInterrupt:
         print("\n⚠️ Operation cancelled by user.")
     except Exception as e:
         print(f"❌ Unexpected Error: {e}")
     finally:
         print("\n🔻 Cleaning resources...")
+        # Note: Connections are managed inside controller methods, 
+        # but we close the initial check connections here.
         if db_conn:
             db_conn.close()
             print("✅ Database connection closed")
@@ -111,7 +131,7 @@ def run_llm(repo_path: str, command: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="AI Senior Engineer Agent")
     parser.add_argument("path", nargs="?", default=".", help="Repo path")
-    
+
     subparsers = parser.add_subparsers(dest="command", required=True, help="Modes")
     subparsers.add_parser("review", help="Review code architecture")
     subparsers.add_parser("test", help="Generate unit tests")
