@@ -52,9 +52,10 @@ class CliAgent:
             print("Saved to the reddis")
             self.make_vector(chunk_dict, response)
             print("Made the vector embedding")
-            return True
-        except :
-            print("failed to do the task")
+            return response
+        except Exception as e:
+            traceback.print_exc()
+            return None
 
     def review_code(self, chunk_dict):
         prompt = "You are a senior engineer. Review this code for edge cases, security, and architecture."
@@ -90,7 +91,7 @@ class CliAgent:
             self.vector_store.save(save_dir)
                         
             print(f"✅ Vector Store updated and saved to {save_dir}/")
-        except:
-
+        except Exception as e:
+            print(f"❌ Error updating vector store: {e}")
             traceback.print_exc()
             return None

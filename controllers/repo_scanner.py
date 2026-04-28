@@ -64,15 +64,13 @@ class RepoScanner:
             if not file_path.exists():
                 continue
 
-            detected = self.detector.detect(file_path)
+            detected = self.detector.get_file_metadata(str(file_path))
             if not detected:
                 continue
 
-            chunks = self.parser.parse(
-                file_path=file_path,
-                file_type=detected.get('file_type'),
-                language=detected.language,
-                incremental=True
+            chunks = self.parser.parse_file(
+                metadata=detected,
+                parent_chunk_map=None
             )
             parsed_chunks.extend(chunks)
         return parsed_chunks

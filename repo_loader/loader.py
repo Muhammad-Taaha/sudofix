@@ -63,14 +63,24 @@ class RepoLoader:
         if self.token:
             url = url.replace("https://", f"https://{self.token}@")
 
-        subprocess.run(
-            ["git", "clone", url, str(repo_dir)],
-            check=True
-        )
+        try:
+            subprocess.run(
+                ["git", "clone", url, str(repo_dir)],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(f"Failed to clone repository: {e.stderr}")
 
     def _checkout(self, repo_dir: Path, ref: str):
-        subprocess.run(
-            ["git", "checkout", ref],
-            cwd=repo_dir,
-            check=True
-        )
+        try:
+            subprocess.run(
+                ["git", "checkout", ref],
+                cwd=repo_dir,
+                check=True,
+                capture_output=True,
+                text=True
+            )
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(f"Failed to checkout {ref}: {e.stderr}")

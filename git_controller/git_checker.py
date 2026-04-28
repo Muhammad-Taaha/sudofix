@@ -3,8 +3,11 @@ import subprocess
 
 
 class Checker:
-    def __init__(self, command):
+    def __init__(self, command, repo_path=None, repo_scanner=None, db=None):
         self.commad = command
+        self.repo_path = repo_path
+        self.repo_scanner = repo_scanner
+        self.db = db
 
     def sync_git_changes(self):
         # 1. Get files changed in the last commit

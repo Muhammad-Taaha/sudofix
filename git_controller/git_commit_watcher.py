@@ -11,25 +11,30 @@ class GitCommitWatcher:
 
     def get_last_commit_hash(self):
         return subprocess.check_output(
-            ["git", "rev-parse", "HEAD"]
+            ["git", "rev-parse", "HEAD"],
+            cwd=self.repo_path
         ).decode().strip()
 
     def get_difference_between_commits(self, commit_hash):
         return subprocess.check_output(
-            ["git", "show", commit_hash]
+            ["git", "show", commit_hash],
+            cwd=self.repo_path
         ).decode()
 
     def get_staged_diff(self):
         return subprocess.check_output(
-            ["git", "diff", "--cached"]
+            ["git", "diff", "--cached"],
+            cwd=self.repo_path
         ).decode()
 
     def get_unstagged_diff(self):
         return subprocess.check_output(
-            ["git", "diff"]
+            ["git", "diff"],
+            cwd=self.repo_path
         ).decode()
 
     def get_staged_diff(self, mode="committed"):
         return subprocess.check_output(
-            ["git", "diff", "--cached"]
+            ["git", "diff", "--cached"],
+            cwd=self.repo_path
         ).decode()

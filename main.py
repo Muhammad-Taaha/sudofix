@@ -46,6 +46,7 @@ def run_llm(repo_path: str, command: str):
             content = chunk.get('content', '')
             file_path = chunk.get('file_path')
             file_name = os.path.basename(file_path if file_path else 'unknown')
+            chunk_hash = chunk.get('chunk_hash')  # Get hash from chunk, not metadata
 
             # Generate unique hash for the Specific Content + Specific Task
             content_hash = hashlib.sha256(

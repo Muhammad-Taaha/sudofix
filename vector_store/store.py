@@ -35,13 +35,6 @@ class VectorStore:
         distances, indices = self.index.search(vector, top_k)
         results = []
 
-        for idx in indices[0]:
-            if idx < len(self.metadatas):
-                results.append(self.metadatas[idx])
-
-        return results
-        results = []
-
         # FAISS returns -1 if it doesn't find enough matches
         for idx in indices[0]:
             if idx != -1 and idx < len(self.metadatas):

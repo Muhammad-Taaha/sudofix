@@ -88,18 +88,20 @@ class RepoParser:
             # ... existing line/content logic ...
 
                # Inside parse_python loop:
+                chunk_content = "\n".join(
+                    lines[node.lineno-1: getattr(node, 'end_lineno', node.lineno)])
+                chunk_hash = compute_hash(chunk_content)
                 chunks.append(
                     self._build_chunk(
                         file_path=file_path,
                         chunk_id=len(chunks),
                         start_line=node.lineno,
                         end_line=getattr(node, 'end_lineno', node.lineno),
-                        content="\n".join(
-                            lines[node.lineno-1: getattr(node, 'end_lineno', node.lineno)]),
-                        # Or hash just the node content
-                        chunk_hash=compute_hash(source),
+                        content=chunk_content,
+                        # Hash is now just the chunk content
+                        chunk_hash=chunk_hash,
                         parent_chunk_id=parent_chunk_map.get(
-                            compute_hash(source)),
+                            chunk_hash),
                         language="python",
                         strategy="ast"
                     )
@@ -186,24 +188,6 @@ class RepoParser:
     # -----------------------------
     # Unified interface
 
-    # -----------------------------
-    # Main parser interface
-    # -----------------------------
-    def parse_file(self, metadata: Dict, parent_chunk_map=None) -> List[Dict]:
-        parent_chunk_map = parent_chunk_map or {}
-
-        file_path = metadata["file_path"]
-        strategy = metadata.get("parse_strategy", "raw-text")
-        language = metadata.get("language", "unknown")
-
-        if strategy == "ast" and language == "python":
-            return self.parse_python(file_path, parent_chunk_map)
-
-        elif strategy == "tree-sitter":
-            return self.parse_tree_sitter(file_path, language, parent_chunk_map)
-
-        else:
-            return self.parse_raw(file_path, parent_chunk_map)
   # -----------------------------
     # Chunk builder (single source of truth)
     # -----------------------------
