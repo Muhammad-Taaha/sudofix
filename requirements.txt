@@ -1,0 +1,8 @@
+redis
+dotenv
+pyyaml
+tree_sitter
+tree_sitter_cpp
+tree_sitter_rust
+sentence-transformers
+faiss-cpu
