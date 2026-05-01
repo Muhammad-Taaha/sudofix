@@ -2,3 +2,5 @@
 .evn
 vector_store/docs.index
 vector_store/metadata.pkl
+
+venv/
