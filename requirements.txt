@@ -16,3 +16,6 @@ jupyter
 ipython
 pandas
 rich
+fastapi
+uvicorn
+pydantic
