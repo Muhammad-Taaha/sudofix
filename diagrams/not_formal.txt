@@ -476,9 +476,8 @@ Languages include:
 • Python
 • Java
 • C++
-• Go
 • Rust
-
+ js   ;;;;
 Metric:
 Pass@k
 
