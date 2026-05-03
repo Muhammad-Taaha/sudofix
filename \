@@ -1,0 +1,41 @@
+  ~/code/repo-llm
+  󰉋 __pycache__             ★ 
+  󰉋 cli_agent              ★ 
+  󰉋 controllers            ★ 
+  󰉋 diagrams
+  󰉋 extracted_tests
+  󰉋 git_controller          ★ 
+  󰉋 llm                     ★ 
+  󱁽 parser                 ★ 
+  󰉋 repo_loader              
+   sastscanner
+  │ 󰉋 cache                 ★ 
+  │ 󰉋 cli                   ★ 
+  │ 󰉋 config                ★ 
+  │ 󰉋 core                  ★ 
+  │ 󰉋 findings             ★ 
+  │ 󰉋 integration           ★ 
+  │ 󰉋 integrations          ★ 
+  │ 󰉋 rules                 ★ 
+  │ 󱞊 tests                 ★ 
+  │ 󰉋 utils                 ★ 
+  │  README.md             ★ 
+  │ 󰌠 __init__.py           ★ 
+  │ 󰌠 __main__.py           ★ 
+  │  pyproject.toml        ★ 
+  └ 󰌠 sastscanner.py
+  󰉋 tree-sitter-cpp
+  󰉋 tree-sitter-rust
+  󰉋 vector_store            ★ 
+  󰌠 build_tree_sitter.py
+   docker-compose.yml
+  󰌠 extract_tests.py
+  󰆼 init.sql
+  󰌠 main.py               ✗ 
+  󰌠 pipeline.py
+  󰌠 query_rag.py
+  󰦪 req.txt
+  󱘎 requirements.txt
+  󰦪 tasks.txt               ★ 
+  󰠮 test.ipynb
+  (6 hidden items)
