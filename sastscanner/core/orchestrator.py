@@ -1,13 +1,14 @@
 import os
-from typing import List, Dict, Any
 from pathlib import Path
+from typing import Any, Dict, List
+
+from parser.ast_nodes import UnifiedNode
 
 # Import your existing parser factory
 from parser.parser_factory import ParserFactory
-from parser.ast_nodes import UnifiedNode
 
-from .rule_runner import RuleRunner
 from ..findings.finding import Finding
+from .rule_runner import RuleRunner
 
 
 class Orchestrator:
@@ -32,8 +33,7 @@ class Orchestrator:
         findings = []
         for node in nodes:
             chunk_dict = self._node_to_dict(node, file_path)
-            context = {"repo_path": str(
-                self.repo_path), "file_path": file_path}
+            context = {"repo_path": str(self.repo_path), "file_path": file_path}
             node_findings = self.rule_runner.run(chunk_dict, context)
             findings.extend(node_findings)
         return findings
@@ -53,13 +53,13 @@ class Orchestrator:
 
     def _is_source_file(self, file_path: str) -> bool:
         """Check if file extension is supported."""
-        supported = {".py", ".java", ".js", ".go",
-                     ".rs", ".c", ".cpp", ".rb", ".php"}
+        supported = {".py", ".java", ".js", ".go", ".rs", ".c", ".cpp", ".rb", ".php"}
         return Path(file_path).suffix.lower() in supported
 
     def _node_to_dict(self, node: UnifiedNode, file_path: str) -> Dict[str, Any]:
         """Convert UnifiedNode to the chunk dict format expected by rules."""
         return {
+            "ast_node": node,
             "content": node.code,
             "file_path": file_path,
             "file_name": Path(file_path).name,

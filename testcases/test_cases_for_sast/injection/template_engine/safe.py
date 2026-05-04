@@ -1,7 +1,6 @@
-from jinja2 import Template, Environment
+from jinja2 import Template
 
 def safe():
     user_input = input("Enter name: ")
-    # SAFE: template is fixed, only variable is user-controlled
-    t = Template("Hello {{ name }}")
+    t = Template("Hello {{ name }}")  # SAFE: fixed template
     return t.render(name=user_input)

@@ -1,27 +1,33 @@
 import importlib
-
 import pkgutil
-
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 from ..findings.finding import Finding
-
 from ..rules.base_rule import BaseRule
 
 
 class RuleRunner:
-
     def __init__(self, rules_package: str = "sastscanner.rules"):
         self.rules: List[BaseRule] = []
+        self._load_rules_recursive(rules_package)
 
-        self._load_rules(rules_package)
-
-    def _load_rules(self, package_name: str):
+    def _load_rules_recursive(self, package_name: str):
+        """Recursively import all modules under package_name and collect rule classes."""
         try:
             package = importlib.import_module(package_name)
-            for _, module_name, _ in pkgutil.iter_modules(package.__path__):
-                module = importlib.import_module(
-                    f"{package_name}.{module_name}")
+        except ImportError as e:
+            print(f"⚠️ Could not import package {package_name}: {e}")
+            return
+
+        # Walk through all modules and subpackages
+        for _, module_name, is_pkg in pkgutil.walk_packages(
+            package.__path__, prefix=package_name + "."
+        ):
+            if is_pkg:
+                # Recursively load subpackage (already covered by walk_packages)
+                continue
+            try:
+                module = importlib.import_module(module_name)
                 for attr_name in dir(module):
                     attr = getattr(module, attr_name)
                     if (
@@ -30,18 +36,17 @@ class RuleRunner:
                         and attr != BaseRule
                     ):
                         self.rules.append(attr())
-        except Exception as e:
-            print(f"⚠️ Failed to load rules from {package_name}: {e}")
+            except Exception as e:
+                print(f"⚠️ Failed to load rule from {module_name}: {e}")
 
     def run(
         self, node: Dict[str, Any], context: Dict[str, Any] = None
     ) -> List[Finding]:
         context = context or {}
-        all_findings = []
+        findings = []
         for rule in self.rules:
             try:
-                findings = rule.check(node, context)
-                all_findings.extend(findings)
+                findings.extend(rule.check(node, context))
             except Exception as e:
                 print(f"⚠️ Rule {rule.name} failed: {e}")
-        return all_findings
+        return findings

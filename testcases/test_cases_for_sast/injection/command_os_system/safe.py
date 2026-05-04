@@ -1,7 +1,3 @@
-import os
-import shlex
-
 def safe():
-    user_input = input("Enter filename: ")
-    # Use list arguments, no shell
-    os.system(["ls", "-l", shlex.quote(user_input)])
+    user_input = input("Enter something: ")
+    print(f"You entered: {user_input}")
