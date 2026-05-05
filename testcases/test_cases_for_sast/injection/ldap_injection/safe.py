@@ -1,5 +1,4 @@
 import ldap
-
 def safe():
     user_filter = input("Enter filter: ")
     conn = ldap.initialize("ldap://localhost")

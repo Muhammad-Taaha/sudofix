@@ -1,5 +1,4 @@
 import ldap
-
 def vulnerable():
     user_filter = input("Enter filter: ")
     conn = ldap.initialize("ldap://localhost")

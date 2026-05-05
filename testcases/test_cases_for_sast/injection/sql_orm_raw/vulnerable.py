@@ -1,5 +1,5 @@
-# Assume Django or SQLAlchemy in a real test
+# Assume Django Model
 def vulnerable(request):
     user_input = request.GET.get('name')
-    # Dangerous raw query with string formatting
-    results = MyModel.objects.raw("SELECT * FROM myapp_mymodel WHERE name = '" + user_input + "'")
+    # Raw query with concatenation
+    return MyModel.objects.raw("SELECT * FROM myapp_mymodel WHERE name = '" + user_input + "'")

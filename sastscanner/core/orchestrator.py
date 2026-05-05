@@ -18,22 +18,32 @@ class Orchestrator:
         self.rule_runner = RuleRunner()
 
     def scan_file(self, file_path: str) -> List[Finding]:
-        """Parse a single file and run rules on each node."""
+        """Parse a single file and run rules on every AST node (depth-first)."""
         parser = self.parser_factory.get_parser(file_path)
         if not parser:
             return []
         try:
-            nodes = parser.parse(file_path)  # returns List[UnifiedNode]
+            parsed_tree = parser.parse(file_path)
         except Exception as e:
             print(f"❌ Parse error in {file_path}: {e}")
             return []
-
-        # Convert UnifiedNode to the dict format expected by rules
-        # (or adapt rules to accept UnifiedNode directly)
+        traversal_nodes: List[UnifiedNode] = []
+        if isinstance(parsed_tree, list):
+            # Backward compatibility with parsers that still return top-level lists.
+            for top_node in parsed_tree:
+                traversal_nodes.extend(self._walk_nodes(top_node))
+        elif isinstance(parsed_tree, UnifiedNode):
+            traversal_nodes.extend(self._walk_nodes(parsed_tree))
+        else:
+            return []
         findings = []
-        for node in nodes:
+        context = {
+            "repo_path": str(self.repo_path),
+            "file_path": file_path,
+            "taint_state": {},
+        }
+        for node in traversal_nodes:
             chunk_dict = self._node_to_dict(node, file_path)
-            context = {"repo_path": str(self.repo_path), "file_path": file_path}
             node_findings = self.rule_runner.run(chunk_dict, context)
             findings.extend(node_findings)
         return findings
@@ -68,3 +78,10 @@ class Orchestrator:
             "language": node.language,
             "metadata": {"language": node.language},
         }
+
+    def _walk_nodes(self, root: UnifiedNode) -> List[UnifiedNode]:
+        """Depth-first traversal including root node."""
+        result = [root]
+        for child in root.children or []:
+            result.extend(self._walk_nodes(child))
+        return result

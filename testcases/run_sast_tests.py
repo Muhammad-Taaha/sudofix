@@ -9,19 +9,43 @@ sys.path.insert(0, str(repo_root))
 from sastscanner.core.orchestrator import Orchestrator
 from sastscanner.core.rule_runner import RuleRunner
 
-print(f"the rules are ===> {[r.name for r in RuleRunner().rules]}")
+print(f"Loaded rules: {[r.name for r in RuleRunner().rules]}")
 
 BASE_TESTS = Path(__file__).parent / "test_cases_for_sast" / "injection"
 
 EXPECTED_RULES = {
-    "command_os_system": {"vulnerable.py": "Command Injection", "safe.py": None},
-    "command_subprocess": {"vulnerable.py": "Command Injection", "safe.py": None},
-    "sql_concat": {"vulnerable.py": "SQL Injection via String Concatenation", "safe.py": None},
-    "sql_orm_raw": {"vulnerable.py": "ORM Raw SQL Execution", "safe.py": None},
-    "code_eval": {"vulnerable.py": "Dynamic Code Execution (eval/exec)", "safe.py": None},
-    "ldap_injection": {"vulnerable.py": "LDAP Injection", "safe.py": None},
-    "nosql_mongo": {"vulnerable.js": "NoSQL Injection (MongoDB)", "safe.js": None},
-    "template_engine": {"vulnerable.py": "Server‑Side Template Injection", "safe.py": None}
+    "command_injection": {
+        "vulnerable.py": "Command Injection",
+        "safe.py": None,
+    },
+    "command_subprocess": {
+        "vulnerable.py": "Command Injection via Subprocess/Shell",
+        "safe.py": None,
+    },
+    "sql_concat": {
+        "vulnerable.py": "SQL Injection via String Concatenation",
+        "safe.py": None,
+    },
+    "sql_orm_raw": {
+        "vulnerable.py": "ORM Raw SQL Execution",
+        "safe.py": None,
+    },
+    "code_eval": {
+        "vulnerable.py": "Dynamic Code Execution (eval/exec)",
+        "safe.py": None,
+    },
+    "ldap_injection": {
+        "vulnerable.py": "LDAP Injection",
+        "safe.py": None,
+    },
+    "nosql_mongo": {
+        "vulnerable.js": "NoSQL Injection (MongoDB)",
+        "safe.js": None,
+    },
+    "template_engine": {
+        "vulnerable.py": "Server‑Side Template Injection",
+        "safe.py": None,
+    }
 }
 
 def run_test(test_dir: Path, filename: str, expected_rule: str | None):

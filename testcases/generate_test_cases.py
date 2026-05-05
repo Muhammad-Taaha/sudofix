@@ -3,98 +3,91 @@ import os
 BASE = "test_cases_for_sast/injection"
 
 test_cases = {
-    "command_os_system": {
+    "command_injection": {
         "vulnerable.py": """
 import os
-
 def vulnerable():
-    user_input = input("Enter command: ")
-    os.system(user_input)  # DANGEROUS
+    user_cmd = input("Enter command: ")
+    os.system(user_cmd)  # DANGEROUS
 """,
         "safe.py": """
-import subprocess
-
+import os
 def safe():
-    user_input = input("Enter filename: ")
-    # SAFE: use subprocess with list, no shell
-    subprocess.run(["ls", "-l", user_input])
+    # Constant command, safe (AST should ignore)
+    os.system("ls -la")
 """,
-        "README.md": "# Command Injection via os.system\n\nVulnerable: user input passed to os.system\nSafe: using subprocess with list arguments",
+        "README.md": "# Command Injection: os.system with variable",
     },
     "command_subprocess": {
         "vulnerable.py": """
 import subprocess
-
 def vulnerable():
-    user_input = input("Enter command: ")
-    subprocess.call(user_input, shell=True)  # DANGEROUS shell=True
+    user_cmd = input("Enter command: ")
+    subprocess.call(user_cmd, shell=True)  # DANGEROUS
 """,
         "safe.py": """
 import subprocess
-
 def safe():
-    user_input = input("Enter argument: ")
-    subprocess.call(["ls", "-l", user_input])  # SAFE: list, no shell
+    # List form, no shell, safe
+    subprocess.call(["ls", "-la"])
 """,
-        "README.md": "# Command Injection via subprocess with shell=True",
+        "README.md": "# Command Injection: subprocess with shell=True",
     },
     "sql_concat": {
         "vulnerable.py": """
 import sqlite3
-
 def vulnerable():
-    user_id = input("Enter user ID: ")
+    user_id = input("Enter ID: ")
     conn = sqlite3.connect("db.sqlite")
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM users WHERE id = " + user_id)  # DANGEROUS
 """,
         "safe.py": """
 import sqlite3
-
 def safe():
-    user_id = input("Enter user ID: ")
+    user_id = input("Enter ID: ")
     conn = sqlite3.connect("db.sqlite")
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))  # SAFE parameterized
+    # Parameterized query, safe
+    cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
 """,
-        "README.md": "# SQL Injection via String Concatenation",
+        "README.md": "# SQL Injection: string concatenation",
     },
     "sql_orm_raw": {
         "vulnerable.py": """
-# Assume Django or SQLAlchemy in a real test
+# Assume Django Model
 def vulnerable(request):
     user_input = request.GET.get('name')
-    # Dangerous raw query with string formatting
-    results = MyModel.objects.raw("SELECT * FROM myapp_mymodel WHERE name = '" + user_input + "'")
+    # Raw query with concatenation
+    return MyModel.objects.raw("SELECT * FROM myapp_mymodel WHERE name = '" + user_input + "'")
 """,
         "safe.py": """
 def safe(request):
     user_input = request.GET.get('name')
-    # Safe: parameterized raw query
-    results = MyModel.objects.raw("SELECT * FROM myapp_mymodel WHERE name = %s", [user_input])
+    # Parameterized raw query
+    return MyModel.objects.raw("SELECT * FROM myapp_mymodel WHERE name = %s", [user_input])
 """,
         "README.md": "# ORM Raw SQL Injection",
     },
     "code_eval": {
         "vulnerable.py": """
 def vulnerable():
-    user_code = input("Enter Python expression: ")
+    user_code = input("Enter expression: ")
     result = eval(user_code)  # DANGEROUS
     print(result)
 """,
         "safe.py": """
 import ast
-
 def safe():
     user_input = input("Enter a number: ")
-    result = ast.literal_eval(user_input)  # SAFE
+    # Only literal evaluation, safe
+    result = ast.literal_eval(user_input)
 """,
-        "README.md": "# Code Injection via eval/exec",
+        "README.md": "# Code Injection: eval",
     },
     "ldap_injection": {
         "vulnerable.py": """
 import ldap
-
 def vulnerable():
     user_filter = input("Enter filter: ")
     conn = ldap.initialize("ldap://localhost")
@@ -102,7 +95,6 @@ def vulnerable():
 """,
         "safe.py": """
 import ldap
-
 def safe():
     user_filter = input("Enter filter: ")
     conn = ldap.initialize("ldap://localhost")
@@ -113,12 +105,12 @@ def safe():
     },
     "nosql_mongo": {
         "vulnerable.js": """
-// JavaScript (Node.js) MongoDB vulnerable example
+// JavaScript vulnerable
 const userInput = req.query.username;
 db.users.find({ $where: `this.username == '${userInput}'` });  // DANGEROUS
 """,
         "safe.js": """
-// Safe: use regular query object
+// Safe: use regular query
 const userInput = req.query.username;
 db.users.find({ username: userInput });
 """,
@@ -127,21 +119,19 @@ db.users.find({ username: userInput });
     "template_engine": {
         "vulnerable.py": """
 from jinja2 import Template
-
 def vulnerable():
     user_template = input("Enter template: ")
-    t = Template(user_template)  # DANGEROUS: user-controlled template
+    t = Template(user_template)  # DANGEROUS
     return t.render(name="test")
 """,
         "safe.py": """
 from jinja2 import Template
-
 def safe():
     user_input = input("Enter name: ")
-    t = Template("Hello {{ name }}")  # SAFE: fixed template
+    t = Template("Hello {{ name }}")  # SAFE: template is constant
     return t.render(name=user_input)
 """,
-        "README.md": "# Server-Side Template Injection",
+        "README.md": "# SSTI",
     },
 }
 

@@ -1,1 +1,1 @@
-# SQL Injection via String Concatenation
+# SQL Injection: string concatenation
