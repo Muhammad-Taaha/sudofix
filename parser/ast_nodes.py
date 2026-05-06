@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Dict
 from uuid import uuid4
 
 
@@ -68,7 +68,7 @@ class CallNode(UnifiedNode):
     """Represents a function/method call expression."""
 
     callee: str = ""
-    arguments: List[str] = field(default_factory=list)
+    arguments: List[Dict] = field(default_factory=list)
 
     def __init__(
         self,
