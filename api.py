@@ -298,6 +298,274 @@ async def _run_analysis_task(repo_path: str, command: str, operation_id: str):
         cache.save_to_reddis(f"operation:{operation_id}", f"error:{str(e)}")
 
 
+# ================================
+# Operation Status Endpoints
+# ================================
+
+class OperationStatusResponse(BaseModel):
+    """Operation status response"""
+    operation_id: str
+    status: str
+    message: str
+
+@app.get("/operations/{operation_id}", response_model=OperationStatusResponse)
+async def get_operation_status(operation_id: str):
+    """Get the status of an analysis operation"""
+    try:
+        redis_client = cache.connect()
+        if not redis_client:
+            raise HTTPException(status_code=503, detail="Cache service unavailable")
+        
+        status_key = f"operation:{operation_id}"
+        status = redis_client.get(status_key)
+        
+        if status is None:
+            return OperationStatusResponse(
+                operation_id=operation_id,
+                status="not_found",
+                message="Operation not found or expired"
+            )
+        
+        status_str = status.decode() if isinstance(status, bytes) else status
+        
+        if status_str.startswith("error:"):
+            return OperationStatusResponse(
+                operation_id=operation_id,
+                status="error",
+                message=status_str.replace("error:", "")
+            )
+        
+        return OperationStatusResponse(
+            operation_id=operation_id,
+            status=status_str,
+            message=f"Operation status: {status_str}"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Status check error: {str(e)}")
+
+
+# ================================
+# Repository Management Endpoints
+# ================================
+
+class RepositoryInfo(BaseModel):
+    """Repository information"""
+    id: int
+    name: str
+    path: str
+    last_scanned: Optional[str] = None
+
+@app.get("/repositories", response_model=List[RepositoryInfo])
+async def list_repositories():
+    """List all indexed repositories"""
+    try:
+        sql = "SELECT id, name, path, last_scanned FROM repositories ORDER BY id DESC"
+        repos = db._execute_query(sql, fetch=True)
+        
+        return [
+            RepositoryInfo(
+                id=r['id'],
+                name=r['name'],
+                path=r['path'],
+                last_scanned=str(r['last_scanned']) if r['last_scanned'] else None
+            )
+            for r in (repos or [])
+        ]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Repository listing error: {str(e)}")
+
+
+@app.get("/repositories/{repo_id}", response_model=RepositoryInfo)
+async def get_repository(repo_id: int):
+    """Get information about a specific repository"""
+    try:
+        sql = "SELECT id, name, path, last_scanned FROM repositories WHERE id = %s"
+        result = db._execute_query(sql, (repo_id,), fetch=True)
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="Repository not found")
+        
+        r = result[0]
+        return RepositoryInfo(
+            id=r['id'],
+            name=r['name'],
+            path=r['path'],
+            last_scanned=str(r['last_scanned']) if r['last_scanned'] else None
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Repository retrieval error: {str(e)}")
+
+
+@app.delete("/repositories/{repo_id}")
+async def delete_repository(repo_id: int):
+    """Delete a repository and all its associated data"""
+    try:
+        sql = "DELETE FROM repositories WHERE id = %s RETURNING id"
+        result = db._execute_query(sql, (repo_id,), fetch=True)
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="Repository not found")
+        
+        return {"message": f"Repository {repo_id} deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Repository deletion error: {str(e)}")
+
+
+# ================================
+# Batch Analysis Endpoints
+# ================================
+
+class BatchAnalysisRequest(BaseModel):
+    """Request for batch analysis across multiple repositories"""
+    repo_ids: List[int]
+    command: str  # "review", "test", or "doc"
+
+class BatchAnalysisResponse(BaseModel):
+    """Batch analysis response"""
+    batch_id: str
+    operation_ids: List[str]
+    total_operations: int
+    message: str
+
+@app.post("/batch-analyze", response_model=BatchAnalysisResponse)
+async def batch_analyze(request: BatchAnalysisRequest, background_tasks: BackgroundTasks):
+    """
+    Trigger batch analysis across multiple repositories.
+    Each repository gets its own operation ID.
+    """
+    if request.command not in ["review", "test", "doc"]:
+        raise HTTPException(
+            status_code=400,
+            detail="Command must be 'review', 'test', or 'doc'"
+        )
+    
+    if not request.repo_ids:
+        raise HTTPException(status_code=400, detail="At least one repository ID required")
+    
+    try:
+        import hashlib
+        import time
+        
+        batch_id = hashlib.md5(f"{request.repo_ids}_{time.time()}".encode()).hexdigest()
+        operation_ids = []
+        
+        # Queue analysis for each repository
+        for repo_id in request.repo_ids:
+            sql = "SELECT path FROM repositories WHERE id = %s"
+            result = db._execute_query(sql, (repo_id,), fetch=True)
+            
+            if result:
+                repo_path = result[0]['path']
+                operation_id = f"{request.command}_{repo_id}_{batch_id}"
+                operation_ids.append(operation_id)
+                
+                background_tasks.add_task(
+                    _run_analysis_task,
+                    repo_path=repo_path,
+                    command=request.command,
+                    operation_id=operation_id
+                )
+        
+        return BatchAnalysisResponse(
+            batch_id=batch_id,
+            operation_ids=operation_ids,
+            total_operations=len(operation_ids),
+            message=f"Batch analysis queued for {len(operation_ids)} repositories"
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Batch analysis error: {str(e)}")
+
+
+# ================================
+# Statistics & Insights Endpoints
+# ================================
+
+class CodeStatsResponse(BaseModel):
+    """Code statistics response"""
+    repo_id: int
+    total_files: int
+    total_chunks: int
+    total_lines_of_code: int
+    languages: Dict[str, int]
+
+@app.get("/statistics/{repo_id}", response_model=CodeStatsResponse)
+async def get_repository_statistics(repo_id: int):
+    """Get code statistics for a repository"""
+    try:
+        # Get files count
+        files_sql = "SELECT COUNT(*) as count FROM files WHERE repo_id = %s"
+        files_result = db._execute_query(files_sql, (repo_id,), fetch=True)
+        total_files = files_result[0]['count'] if files_result else 0
+        
+        # Get language distribution
+        lang_sql = """
+            SELECT language, COUNT(*) as count 
+            FROM files 
+            WHERE repo_id = %s 
+            GROUP BY language
+        """
+        lang_result = db._execute_query(lang_sql, (repo_id,), fetch=True) or []
+        languages = {r['language']: r['count'] for r in lang_result}
+        
+        # Get chunks count
+        chunks_sql = """
+            SELECT COUNT(*) as count 
+            FROM chunks c
+            JOIN code_entities ce ON c.code_entity_id = ce.id
+            JOIN files f ON ce.file_id = f.id
+            WHERE f.repo_id = %s
+        """
+        chunks_result = db._execute_query(chunks_sql, (repo_id,), fetch=True)
+        total_chunks = chunks_result[0]['count'] if chunks_result else 0
+        
+        # Get total LOC
+        loc_sql = """
+            SELECT SUM(size) as total_loc
+            FROM files
+            WHERE repo_id = %s
+        """
+        loc_result = db._execute_query(loc_sql, (repo_id,), fetch=True)
+        total_lines = loc_result[0]['total_loc'] if loc_result and loc_result[0]['total_loc'] else 0
+        
+        return CodeStatsResponse(
+            repo_id=repo_id,
+            total_files=total_files,
+            total_chunks=total_chunks,
+            total_lines_of_code=total_lines,
+            languages=languages
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Statistics error: {str(e)}")
+
+
+# ================================
+# Error Handlers
+# ================================
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request, exc):
+    """Handle HTTP exceptions"""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail, "status": "error"}
+    )
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request, exc):
+    """Handle general exceptions"""
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error", "status": "error", "error": str(exc)}
+    )
+
+
 @app.get("/analyze/{operation_id}")
 async def get_analysis_status(operation_id: str):
     """Check status of an analysis operation"""
