@@ -1,0 +1,80 @@
+Loaded rules: ['Dynamic Code Execution (eval/exec)', 'Command Injection', 'LDAP Injection', 'NoSQL Injection (MongoDB)', 'SQL Injection via String Concatenation', 'ORM Raw SQL Execution', 'Server‑Side Template Injection']
+
+🔍 Scanning: /home/muhammad-taaha/code/repo-llm/testcases/test_cases_for_sast/injection/command_injection/vulnerable.py
+Checking: 'user_cmd' type=str
+-> unquoted string (likely variable) -> False
+   ✅ Vulnerable – found 'Command Injection'
+
+🔍 Scanning: /home/muhammad-taaha/code/repo-llm/testcases/test_cases_for_sast/injection/command_injection/safe.py
+Checking: "'ls -la'" type=str
+-> quoted string -> True
+   ✅ Safe – no findings (as expected)
+
+🔍 Scanning: /home/muhammad-taaha/code/repo-llm/testcases/test_cases_for_sast/injection/command_subprocess/vulnerable.py
+Checking: 'cmd' type=str
+-> unquoted string (likely variable) -> False
+   ✅ Vulnerable – found 'Command Injection'
+
+🔍 Scanning: /home/muhammad-taaha/code/repo-llm/testcases/test_cases_for_sast/injection/command_subprocess/safe.py
+Checking: "['ls', '-la']" type=str
+-> list string -> checking elements
+-> list literal -> True
+   ✅ Safe – no findings (as expected)
+
+🔍 Scanning: /home/muhammad-taaha/code/repo-llm/testcases/test_cases_for_sast/injection/sql_concat/vulnerable.py
+Checking: "'SELECT * FROM users WHERE id = ' + user_id" type=str
+-> unquoted string (likely variable) -> False
+   ✅ Vulnerable – found 'SQL Injection via String Concatenation'
+
+🔍 Scanning: /home/muhammad-taaha/code/repo-llm/testcases/test_cases_for_sast/injection/sql_concat/safe.py
+Checking: "'SELECT * FROM users WHERE id = ?'" type=str
+-> quoted string -> True
+   ✅ Safe – no findings (as expected)
+
+🔍 Scanning: /home/muhammad-taaha/code/repo-llm/testcases/test_cases_for_sast/injection/sql_orm_raw/vulnerable.py
+Checking: '"SELECT * FROM myapp_mymodel WHERE name = \'" + user_input + "\'"' type=str
+-> quoted string -> True
+   ❌ Expected 'ORM Raw SQL Execution' but got []
+
+🔍 Scanning: /home/muhammad-taaha/code/repo-llm/testcases/test_cases_for_sast/injection/sql_orm_raw/safe.py
+Checking: "'SELECT * FROM myapp_mymodel WHERE name = %s'" type=str
+-> quoted string -> True
+Checking: '[user_input]' type=str
+-> list string -> checking elements
+   non-literal token: user_input -> False
+   ❌ Safe triggered: ['ORM Raw SQL Execution']
+
+🔍 Scanning: /home/muhammad-taaha/code/repo-llm/testcases/test_cases_for_sast/injection/code_eval/vulnerable.py
+   ✅ Vulnerable – found 'Dynamic Code Execution (eval/exec)'
+
+🔍 Scanning: /home/muhammad-taaha/code/repo-llm/testcases/test_cases_for_sast/injection/code_eval/safe.py
+   ✅ Safe – no findings (as expected)
+
+🔍 Scanning: /home/muhammad-taaha/code/repo-llm/testcases/test_cases_for_sast/injection/ldap_injection/vulnerable.py
+Checking: "'dc=example,dc=com'" type=str
+-> quoted string -> True
+Checking: 'ldap.SCOPE_SUBTREE' type=str
+-> unquoted string (likely variable) -> False
+   ✅ Vulnerable – found 'LDAP Injection'
+
+🔍 Scanning: /home/muhammad-taaha/code/repo-llm/testcases/test_cases_for_sast/injection/ldap_injection/safe.py
+Checking: "'dc=example,dc=com'" type=str
+-> quoted string -> True
+Checking: 'ldap.SCOPE_SUBTREE' type=str
+-> unquoted string (likely variable) -> False
+   ❌ Safe triggered: ['LDAP Injection']
+
+🔍 Scanning: /home/muhammad-taaha/code/repo-llm/testcases/test_cases_for_sast/injection/nosql_mongo/vulnerable.js
+   ✅ Vulnerable – found 'NoSQL Injection (MongoDB)'
+
+🔍 Scanning: /home/muhammad-taaha/code/repo-llm/testcases/test_cases_for_sast/injection/nosql_mongo/safe.js
+   ✅ Safe – no findings (as expected)
+
+🔍 Scanning: /home/muhammad-taaha/code/repo-llm/testcases/test_cases_for_sast/injection/template_engine/vulnerable.py
+   ✅ Vulnerable – found 'Server‑Side Template Injection'
+
+🔍 Scanning: /home/muhammad-taaha/code/repo-llm/testcases/test_cases_for_sast/injection/template_engine/safe.py
+   ✅ Safe – no findings (as expected)
+
+==================================================
+Results: 13/16 tests passed

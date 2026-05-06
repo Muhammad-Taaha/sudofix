@@ -1,8 +1,9 @@
 import re
 from typing import Any, Dict, List
-
 from ...findings.finding import Finding
 from ..base_rule import BaseRule
+from parser.ast_nodes import CallNode
+from ..literal_helpers import is_constant_literal
 
 
 class SqlConcatRule(BaseRule):
@@ -22,24 +23,19 @@ class SqlConcatRule(BaseRule):
         lang = node.get("language", "").lower()
         ast_node = node.get("ast_node")
 
-        # AST path only for Python
-        if (
-            lang == "python"
-            and ast_node
-            and getattr(ast_node, "node_type", "") == "call"
-        ):
-            callee = getattr(ast_node, "callee", "")
-            if any(sink in callee for sink in ["execute", "executemany", "raw"]):
-                args = getattr(ast_node, "arguments", [])
-                sql_arg = args[0] if args else ""
-                if any(
-                    re.search(p, sql_arg)
-                    for p in [r"\+", r"%", r"\.format\(", r'f"', r"f'"]
-                ):
+        # AST path for Python (most precise)
+        if lang == "python" and isinstance(ast_node, CallNode):
+            callee = ast_node.callee
+            if any(sink in callee for sink in ["execute", "executemany"]):   # "raw" removed to avoid ORM overlap
+                args = ast_node.arguments
+                if not args:
+                    return []
+                # If the first argument is not a literal, assume concatenation/injection
+                if not is_constant_literal(args[0]):
                     return [self._make_finding(node, ast_node, callee)]
             return []
 
-        # Fallback regex for multiple languages
+        # Regex fallback for other languages (mirroring original logic)
         code = node.get("content", "")
         patterns = {
             "python": r'execute\s*\(\s*["\'][^"\']*["\']\s*\+',
@@ -63,6 +59,6 @@ class SqlConcatRule(BaseRule):
             line_start=line_start,
             line_end=line_end,
             message=f"Potential SQL injection via dynamic query in `{callee}`.",
-            code_snippet="",
+            code_snippet=ast_node.code if ast_node else "",
             cwe_id=self.cwe_id,
         )

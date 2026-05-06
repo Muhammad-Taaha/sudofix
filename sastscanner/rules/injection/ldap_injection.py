@@ -1,9 +1,10 @@
-import re
-from typing import Any, Dict, List
-
+import json
+from pathlib import Path
+from typing import List, Dict, Any, Set
 from ...findings.finding import Finding
 from ..base_rule import BaseRule
-
+from parser.ast_nodes import CallNode
+from ..literal_helpers import is_constant_literal
 
 class LdapInjectionRule(BaseRule):
     @property
@@ -12,36 +13,66 @@ class LdapInjectionRule(BaseRule):
 
     @property
     def severity(self) -> str:
-        return "MEDIUM"
+        return "HIGH"
 
     @property
     def cwe_id(self) -> str:
         return "CWE-90"
 
-    def check(self, node: Dict[str, Any], context: Dict[str, Any]) -> List[Finding]:
-        lang = node.get("language", "").lower()
-        if lang != "python":
-            return []
+    _sink_cache: Dict[str, Set[str]] = {}
+    _loaded = False
 
-        code = node.get("content", "")
-        # Flag only when search_s is called with a variable that is NOT escaped
-        # Simple heuristic: if the filter argument is a variable that is not obviously escaped
-        if re.search(r"search_s\s*\([^,]+,[^,]+,\s*[a-zA-Z_][a-zA-Z0-9_]*\s*\)", code):
-            # Exclude if the variable is named 'safe_filter' or 'escaped_filter'
-            if not re.search(
-                r"search_s\([^,]+,[^,]+,\s*(safe_filter|escaped_filter)\s*\)", code
-            ):
-                return [self._make_finding(node)]
+    @classmethod
+    def _load_sinks(cls):
+        if cls._loaded:
+            return
+        json_path = Path(__file__).parent.parent / "sinks2.json"
+        if json_path.exists():
+            with open(json_path) as f:
+                data = json.load(f)
+            for entry in data:
+                lang = entry.get("language")
+                name = entry.get("name")
+                cwe = entry.get("cwe", "")
+                if cwe == "CWE-90" or "ldap" in name.lower():
+                    cls._sink_cache.setdefault(lang, set()).add(name)
+        # Legacy
+        legacy = {
+            "python": {"search", "search_s", "search_ext", "bind", "bind_s"},
+            "java": {"search", "searchForEntry"},
+            "javascript": {"search", "searchBase"},
+        }
+        for lang, names in legacy.items():
+            cls._sink_cache.setdefault(lang, set()).update(names)
+        cls._loaded = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._load_sinks()
+
+    def check(self, node, context):
+        lang = node.get("language", "").lower()
+        if lang not in self._sink_cache:
+            return []
+        ast_node = node.get("ast_node")
+        if not isinstance(ast_node, CallNode):
+            return []
+        callee = ast_node.callee.split('.')[-1]
+        if callee not in self._sink_cache[lang]:
+            return []
+        for arg in ast_node.arguments:
+            if not is_constant_literal(arg):
+                return [self._make_finding(node, ast_node, callee)]
         return []
 
-    def _make_finding(self, node):
+    def _make_finding(self, node, ast_node, callee):
         return Finding(
             rule_name=self.name,
             severity=self.severity,
             file_path=node.get("file_path", ""),
-            line_start=node.get("start_line", 1),
-            line_end=node.get("end_line", 1),
-            message="Potential LDAP injection with unsanitized filter.",
-            code_snippet="",
+            line_start=ast_node.start_line,
+            line_end=ast_node.end_line,
+            message=f"Potential LDAP injection via `{callee}` with user input.",
+            code_snippet=ast_node.code,
             cwe_id=self.cwe_id,
         )

@@ -19,7 +19,7 @@ EXPECTED_RULES = {
         "safe.py": None,
     },
     "command_subprocess": {
-        "vulnerable.py": "Command Injection via Subprocess/Shell",
+        "vulnerable.py": "Command Injection",
         "safe.py": None,
     },
     "sql_concat": {

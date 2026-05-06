@@ -9,14 +9,12 @@ from .cpp_parser import CppParser
 from .go_parser import GoParser
 from .rust_parser import RustParser
 
-
 class ParserFactory:
     _parsers: Dict[str, BaseParser] = {}
 
     @classmethod
     def get_parser(cls, file_path: str) -> Optional[BaseParser]:
         ext = Path(file_path).suffix.lower()
-        # Lazy initialization
         if not cls._parsers:
             cls._register_parsers()
         for parser_ext, parser in cls._parsers.items():
