@@ -24,9 +24,19 @@ else:
             ".py": {"strategy": "ast"},
             ".rs": {"strategy": "tree-sitter"},
             ".cpp": {"strategy": "tree-sitter"},
+            ".c": {"strategy": "tree-sitter"},
             ".h": {"strategy": "tree-sitter"},
-            ".md": {"strategy": "raw-text"},
-            ".sql": {"strategy": "raw-text"},
+            ".hpp": {"strategy": "tree-sitter"},
+            ".md": {"strategy": "markdown"},
+            ".markdown": {"strategy": "markdown"},
+            ".rst": {"strategy": "markdown"},
+            ".sql": {"strategy": "generic"},
+            ".yaml": {"strategy": "generic"},
+            ".yml": {"strategy": "generic"},
+            ".json": {"strategy": "generic"},
+            ".txt": {"strategy": "generic"},
+            ".sh": {"strategy": "generic"},
+            ".env": {"strategy": "generic"},
         },
         "roles": {
             "entrypoint": ["main"],
@@ -55,8 +65,30 @@ class FileDetector:
     @staticmethod
     def detect_language(file_path: str) -> str:
         ext = os.path.splitext(file_path)[1].lower()
-        if ext in CONFIG["languages"]:
-            return ext.lstrip(".")  # e.g., ".py" → "python"
+        
+        # Map extensions to proper language names
+        LANGUAGE_MAP = {
+            ".py": "python",
+            ".rs": "rust",
+            ".cpp": "cpp",
+            ".c": "c",
+            ".h": "c",
+            ".hpp": "cpp",
+            ".md": "markdown",
+            ".markdown": "markdown",
+            ".rst": "restructuredtext",
+            ".sql": "sql",
+            ".yaml": "yaml",
+            ".yml": "yaml",
+            ".json": "json",
+            ".txt": "text",
+            ".sh": "shell",
+            ".bash": "shell",
+            ".env": "shell",
+        }
+        
+        if ext in LANGUAGE_MAP:
+            return LANGUAGE_MAP[ext]
 
         # Optional: Use pygments for unknown extensions
         if guess_lexer_for_filename:
@@ -87,10 +119,22 @@ class FileDetector:
     # -------------------------------
     @staticmethod
     def detect_parse_strategy(language: str) -> str:
-        for ext, lang_conf in CONFIG.get("languages", {}).items():
-            if language == ext.lstrip("."):
-                return lang_conf.get("strategy", "skip")
-        return "skip"
+        # Map language names to parsing strategies
+        STRATEGY_MAP = {
+            "python": "ast",
+            "rust": "tree-sitter",
+            "cpp": "tree-sitter",
+            "c": "tree-sitter",
+            "markdown": "markdown",
+            "restructuredtext": "markdown",
+            "sql": "generic",
+            "yaml": "generic",
+            "json": "generic",
+            "text": "generic",
+            "shell": "generic",
+            "generic": "generic",
+        }
+        return STRATEGY_MAP.get(language, "generic")
 
     # -------------------------------
     # Generate metadata for a file

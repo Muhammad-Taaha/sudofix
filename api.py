@@ -2,7 +2,7 @@
 REST API for Repo-LLM Backend
 Main entry point for code parsing, analysis, and generation operations.
 """
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Header, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Optional, Dict
@@ -16,6 +16,7 @@ from controllers.reddis_controller import RedisManager
 from cli_agent.cli_agent import CliAgent
 from vector_store.store import VectorStore
 from repo_loader.loader import RepoLoader
+from git_controller.github_webhook_handler import GitHubWebhookHandler
 
 # ================================
 # Pydantic Models
@@ -89,6 +90,7 @@ app = FastAPI(
 db = Postgres()
 cache = RedisManager()
 vector_store = VectorStore()
+webhook_handler = GitHubWebhookHandler(webhook_secret=os.getenv("GITHUB_WEBHOOK_SECRET"))
 agent = None  # Will be initialized per request
 
 
@@ -546,6 +548,142 @@ async def get_repository_statistics(repo_id: int):
 
 
 # ================================
+# GitHub Webhook Endpoints
+# ================================
+
+class WebhookResponse(BaseModel):
+    """Webhook processing response"""
+    status: str
+    event_type: str
+    message: str
+    changed_files_count: int
+
+@app.post("/webhooks/github")
+async def handle_github_webhook(
+    request: Request,
+    x_hub_signature_256: Optional[str] = Header(None),
+    background_tasks: BackgroundTasks = None
+):
+    """
+    Handle GitHub webhook events for push, PR, and releases.
+    Validates signature and triggers incremental updates.
+    """
+    try:
+        # Get raw body
+        body = await request.body()
+        
+        # Validate signature
+        if x_hub_signature_256:
+            is_valid = webhook_handler.validate_signature(body, x_hub_signature_256)
+            if not is_valid:
+                raise HTTPException(status_code=401, detail="Invalid webhook signature")
+        
+        # Parse payload
+        import json
+        payload = json.loads(body.decode())
+        
+        # Parse webhook
+        parsed = webhook_handler.parse_webhook(payload)
+        if not parsed:
+            raise HTTPException(status_code=400, detail="Unsupported webhook event")
+        
+        event_type = parsed.get("event_type", "unknown")
+        repo_name = parsed.get("repository", "unknown")
+        changed_files = webhook_handler.get_changed_files(payload, event_type)
+        
+        # Queue background processing
+        if background_tasks and changed_files:
+            background_tasks.add_task(
+                _process_webhook_changes,
+                repo_name=repo_name,
+                event_type=event_type,
+                changed_files=changed_files,
+                webhook_data=parsed
+            )
+        
+        return WebhookResponse(
+            status="received",
+            event_type=event_type,
+            message=f"Webhook for {repo_name} processed successfully",
+            changed_files_count=len(changed_files)
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Webhook processing error: {str(e)}")
+
+
+async def _process_webhook_changes(
+    repo_name: str,
+    event_type: str,
+    changed_files: List[str],
+    webhook_data: Dict
+):
+    """
+    Background task to process webhook changes.
+    Incrementally re-parses changed files and marks entities for re-analysis.
+    """
+    try:
+        print(f"🔔 Processing {event_type} webhook for {repo_name}")
+        
+        # Find repository in database
+        sql = "SELECT id, path FROM repositories WHERE name LIKE %s LIMIT 1"
+        repos = db._execute_query(sql, (f"%{repo_name}%",), fetch=True)
+        
+        if not repos:
+            print(f"⚠️ Repository {repo_name} not found in database")
+            return
+        
+        repo_id = repos[0]['id']
+        repo_path = repos[0]['path']
+        
+        # Trigger incremental scan
+        scanner = RepoScanner(repo_path)
+        chunks = scanner.github_webhook_scanner(changed_files)
+        
+        if not chunks:
+            print(f"ℹ️ No chunks found for {len(changed_files)} changed files")
+            return
+        
+        # Process chunks
+        files_processed = set()
+        for chunk in chunks:
+            file_path = chunk.get('file_path')
+            if file_path:
+                files_processed.add(file_path)
+            
+            # Mark entity as dirty for re-analysis
+            chunk_hash = chunk.get('hash')
+            if chunk_hash and db:
+                try:
+                    db.mark_entity_as_dirty(chunk_hash)
+                except:
+                    pass
+        
+        print(f"✅ Webhook processing complete: {len(files_processed)} files updated")
+        
+    except Exception as e:
+        print(f"❌ Webhook processing error: {e}")
+
+
+@app.get("/webhooks/github/info")
+async def get_webhook_info():
+    """Get GitHub webhook configuration information"""
+    webhook_secret = os.getenv("GITHUB_WEBHOOK_SECRET")
+    return {
+        "webhook_url": "/webhooks/github",
+        "events_supported": ["push", "pull_request", "release", "issues", "pull_request_review"],
+        "webhook_secret_configured": bool(webhook_secret),
+        "instructions": {
+            "setup": "Configure in GitHub: Settings → Webhooks",
+            "payload_url": "https://your-domain.com/webhooks/github",
+            "content_type": "application/json",
+            "events": ["push", "pull_request", "release"]
+        }
+    }
+
+
 # Error Handlers
 # ================================
 
@@ -608,22 +746,10 @@ async def get_system_info():
             "parse": "POST /parse",
             "query": "POST /query",
             "analyze": "POST /analyze",
-            "status": "GET /analyze/{operation_id}"
+            "batch-analyze": "POST /batch-analyze",
+            "webhooks": "POST /webhooks/github"
         }
     }
-
-
-# ================================
-# Error Handling
-# ================================
-
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request, exc):
-    """Handle HTTP exceptions"""
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"error": exc.detail}
-    )
 
 
 if __name__ == "__main__":
