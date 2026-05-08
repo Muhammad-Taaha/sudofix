@@ -2,8 +2,8 @@ import importlib
 import pkgutil
 from typing import List, Dict, Any
 
-from findings.finding import Finding
-from rules.base_rule import BaseRule
+from sastscanner.findings.finding import Finding   # ✅
+from sastscanner.rules.base_rule import BaseRule   # ✅
 
 
 class RuleEngine:

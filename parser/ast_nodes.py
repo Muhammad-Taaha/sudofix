@@ -22,21 +22,22 @@ class UnifiedNode:
     parent_id: Optional[str] = None
     children: List["UnifiedNode"] = field(default_factory=list)
     node_id: str = field(default_factory=lambda: str(uuid4()))
+    def walk_depth_first(self) -> List["UnifiedNode"]:
+        """Return all nodes in depth-first order (flattened tree)."""
+        nodes = [self]
 
+        for child in self.children:
+            if child is None:
+                continue
+
+            nodes.extend(child.walk_depth_first())
+
+        return nodes
     def add_child(self, child: "UnifiedNode") -> None:
         """Attach a child node and set its parent_id."""
         child.parent_id = self.node_id
         self.children.append(child)
 
-    def walk_depth_first(self) -> List["UnifiedNode"]:
-        """
-        Return this node and all descendants in depth-first pre-order.
-        Useful for scanners that need to inspect every node.
-        """
-        result = [self]
-        for child in self.children:
-            result.extend(child.walk_depth_first())
-        return result
 
 
 @dataclass

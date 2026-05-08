@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 import tree_sitter_javascript as ts_js
 from tree_sitter import Language, Node, Parser
@@ -24,11 +24,23 @@ class JavaScriptParser(BaseParser):
     def supported_extensions(self):
         return [".js", ".jsx", ".mjs", ".cjs"]
 
-    def parse(self, file_path: str) -> ModuleNode:
-        with open(file_path, "r", encoding="utf-8") as f:
-            source = f.read()
+    # ✅ FIXED: return List[UnifiedNode]
+    def parse(self, file_path: str) -> List[UnifiedNode]:
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                source = f.read()
+        except Exception as e:
+            print(f"❌ Failed to read {file_path}: {e}")
+            return []
+
         source_bytes = source.encode("utf-8")
-        tree = self.parser.parse(source_bytes)
+
+        try:
+            tree = self.parser.parse(source_bytes)
+        except Exception as e:
+            print(f"❌ JS parse error in {file_path}: {e}")
+            return []
+
         root = tree.root_node
 
         module = ModuleNode(
@@ -39,11 +51,18 @@ class JavaScriptParser(BaseParser):
             end_line=max(1, len(source.splitlines())),
             language="javascript",
         )
+
         for child in root.children:
             converted = self._convert_node(child, file_path, source_bytes)
             if converted:
                 module.add_child(converted)
-        return module
+
+        # ✅ CRITICAL FIX: return flat list
+        try:
+            return module.walk_depth_first()
+        except Exception as e:
+            print(f"❌ Flattening failed in {file_path}: {e}")
+            return []
 
     def _convert_node(
         self, node: Node, file_path: str, source_bytes: bytes
@@ -65,6 +84,7 @@ class JavaScriptParser(BaseParser):
                 callee=self._extract_callee(node, source_bytes),
                 arguments=self._extract_arguments(node, source_bytes),
             )
+
         elif node_type in {"assignment_expression", "variable_declarator"}:
             targets, value = self._extract_assignment_parts(node, source_bytes)
             converted = AssignNode(
@@ -77,6 +97,7 @@ class JavaScriptParser(BaseParser):
                 targets=targets,
                 value=value,
             )
+
         elif node_type == "if_statement":
             converted = IfNode(
                 name=None,
@@ -87,7 +108,14 @@ class JavaScriptParser(BaseParser):
                 language="javascript",
                 condition=self._field_text(node, "condition", source_bytes),
             )
-        elif node_type in {"for_statement", "for_in_statement", "for_of_statement", "while_statement", "do_statement"}:
+
+        elif node_type in {
+            "for_statement",
+            "for_in_statement",
+            "for_of_statement",
+            "while_statement",
+            "do_statement",
+        }:
             converted = LoopNode(
                 name=None,
                 code=code,
@@ -98,6 +126,7 @@ class JavaScriptParser(BaseParser):
                 loop_kind=node_type.replace("_statement", ""),
                 condition=self._field_text(node, "condition", source_bytes),
             )
+
         elif node_type == "return_statement":
             value = code.replace("return", "", 1).strip().rstrip(";")
             converted = ReturnNode(
@@ -109,6 +138,7 @@ class JavaScriptParser(BaseParser):
                 language="javascript",
                 value=value,
             )
+
         elif node_type == "import_statement":
             converted = ImportNode(
                 name=None,
@@ -120,7 +150,13 @@ class JavaScriptParser(BaseParser):
                 module=code.replace("import", "", 1).strip().rstrip(";"),
                 alias=None,
             )
-        elif node_type in {"function_declaration", "generator_function_declaration", "arrow_function", "method_definition"}:
+
+        elif node_type in {
+            "function_declaration",
+            "generator_function_declaration",
+            "arrow_function",
+            "method_definition",
+        }:
             converted = UnifiedNode(
                 node_type="function",
                 name=name,
@@ -130,6 +166,7 @@ class JavaScriptParser(BaseParser):
                 end_line=end,
                 language="javascript",
             )
+
         elif node_type == "class_declaration":
             converted = UnifiedNode(
                 node_type="class",
@@ -140,6 +177,7 @@ class JavaScriptParser(BaseParser):
                 end_line=end,
                 language="javascript",
             )
+
         else:
             converted = UnifiedNode(
                 node_type=node_type,
@@ -155,6 +193,7 @@ class JavaScriptParser(BaseParser):
             child_converted = self._convert_node(child, file_path, source_bytes)
             if child_converted:
                 converted.add_child(child_converted)
+
         return converted
 
     def _extract_assignment_parts(self, node: Node, source_bytes: bytes):
@@ -162,10 +201,12 @@ class JavaScriptParser(BaseParser):
             left = self._field_text(node, "left", source_bytes)
             right = self._field_text(node, "right", source_bytes)
             return [left] if left else [], right
+
         if node.type == "variable_declarator":
             name = self._field_text(node, "name", source_bytes)
             value = self._field_text(node, "value", source_bytes)
             return [name] if name else [], value
+
         return [], ""
 
     def _extract_callee(self, node: Node, source_bytes: bytes) -> str:
@@ -173,29 +214,40 @@ class JavaScriptParser(BaseParser):
             function_node = node.child_by_field_name("function") or node.child_by_field_name("constructor")
             if function_node:
                 return self._node_text(function_node, source_bytes)
+
         return self._node_text(node, source_bytes)
 
     def _extract_arguments(self, node: Node, source_bytes: bytes):
         args_node = node.child_by_field_name("arguments")
         if not args_node:
             return []
-        return [self._node_text(child, source_bytes) for child in args_node.children if child.type not in {"(", ")", ","}]
+
+        return [
+            self._node_text(child, source_bytes)
+            for child in args_node.children
+            if child.type not in {"(", ")", ","}
+        ]
 
     def _extract_name(self, node: Node, source_bytes: bytes) -> Optional[str]:
         field_name = node.child_by_field_name("name")
         if field_name:
             return self._node_text(field_name, source_bytes)
+
         for child in node.children:
             if child.type in {"identifier", "property_identifier"}:
                 return self._node_text(child, source_bytes)
+
         return None
 
     def _field_text(self, node: Node, field: str, source_bytes: bytes) -> str:
         field_node = node.child_by_field_name(field)
         if not field_node:
             return ""
+
         return self._node_text(field_node, source_bytes)
 
     @staticmethod
     def _node_text(node: Node, source_bytes: bytes) -> str:
-        return source_bytes[node.start_byte:node.end_byte].decode("utf-8", errors="replace")
+        return source_bytes[node.start_byte:node.end_byte].decode(
+            "utf-8", errors="replace"
+        )

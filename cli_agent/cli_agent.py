@@ -7,7 +7,7 @@ from llm.ollama_client import OllamaClient
 from git_controller.git_checker import Checker
 from controllers.data_base_controller import Postgres
 from sastscanner.core.rule_engine import RuleEngine  # corrected import
-from sastscanner.finding import Finding
+from sastscanner.findings.finding import Finding
 
 
 class CliAgent:

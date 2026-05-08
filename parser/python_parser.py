@@ -7,7 +7,6 @@ from .ast_nodes import (
     IfNode,
     ImportNode,
     LoopNode,
-    ModuleNode,
     ReturnNode,
     UnifiedNode,
 )
@@ -15,70 +14,48 @@ from .base_parser import BaseParser
 
 
 class PythonParser(BaseParser):
+
     def supported_extensions(self) -> List[str]:
         return [".py"]
 
-    def parse(self, file_path: str) -> ModuleNode:
-        """
-        Parse a Python file into a full hierarchical AST of UnifiedNode objects.
-        Returns a ModuleNode root that contains all descendants.
-        """
+    # ==============================
+    # MAIN ENTRY
+    # ==============================
+    def parse(self, file_path: str) -> List[UnifiedNode]:
+
         with open(file_path, "r", encoding="utf-8") as f:
             source = f.read()
 
         try:
             tree = ast.parse(source)
         except SyntaxError:
-            return ModuleNode(
-                name="module",
-                code=source,
-                file_path=file_path,
-                start_line=1,
-                end_line=max(1, len(source.splitlines())),
-                language="python",
-            )
+            return []
 
-        module_node = ModuleNode(
-            name="module",
-            code=source,
-            file_path=file_path,
-            start_line=1,
-            end_line=max(1, len(source.splitlines())),
-            language="python",
-        )
+        nodes: List[UnifiedNode] = []
 
-        root_converted = self._convert_node(tree, file_path, source)
-        if root_converted:
-            for child in root_converted.children:
-                module_node.add_child(child)
+        for node in ast.walk(tree):   # 🔥 FLAT traversal
+            converted = self._convert_node(node, file_path, source)
+            if converted:
+                nodes.append(converted)
 
-        return module_node
+        return nodes
 
+    # ==============================
+    # CONVERSION (NO CHILDREN)
+    # ==============================
     def _convert_node(
         self,
         py_node: ast.AST,
         file_path: str,
         source: str,
     ) -> Optional[UnifiedNode]:
-        """Recursively convert a Python AST node into a UnifiedNode tree."""
-        if isinstance(py_node, ast.Module):
-            module = ModuleNode(
-                name="module",
-                code=source,
-                file_path=file_path,
-                start_line=1,
-                end_line=max(1, len(source.splitlines())),
-                language="python",
-            )
-            self._attach_children(module, py_node, file_path, source)
-            return module
 
         start = getattr(py_node, "lineno", 1)
         end = getattr(py_node, "end_lineno", start)
         code = ast.get_source_segment(source, py_node) or ""
 
         if isinstance(py_node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            converted = UnifiedNode(
+            return UnifiedNode(
                 node_type="function",
                 name=py_node.name,
                 code=code,
@@ -87,8 +64,9 @@ class PythonParser(BaseParser):
                 end_line=end,
                 language="python",
             )
+
         elif isinstance(py_node, ast.ClassDef):
-            converted = UnifiedNode(
+            return UnifiedNode(
                 node_type="class",
                 name=py_node.name,
                 code=code,
@@ -97,8 +75,9 @@ class PythonParser(BaseParser):
                 end_line=end,
                 language="python",
             )
+
         elif isinstance(py_node, ast.Call):
-            converted = CallNode(
+            return CallNode(
                 name=None,
                 code=code,
                 file_path=file_path,
@@ -108,8 +87,9 @@ class PythonParser(BaseParser):
                 callee=self._expr_to_str(py_node.func),
                 arguments=self._call_arguments(py_node),
             )
+
         elif isinstance(py_node, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
-            converted = AssignNode(
+            return AssignNode(
                 name=None,
                 code=code,
                 file_path=file_path,
@@ -119,8 +99,9 @@ class PythonParser(BaseParser):
                 targets=self._assignment_targets(py_node),
                 value=self._assignment_value(py_node),
             )
+
         elif isinstance(py_node, ast.If):
-            converted = IfNode(
+            return IfNode(
                 name=None,
                 code=code,
                 file_path=file_path,
@@ -129,50 +110,33 @@ class PythonParser(BaseParser):
                 language="python",
                 condition=self._expr_to_str(py_node.test),
             )
-        elif isinstance(py_node, (ast.For, ast.AsyncFor)):
-            converted = LoopNode(
+
+        elif isinstance(py_node, (ast.For, ast.AsyncFor, ast.While)):
+            return LoopNode(
                 name=None,
                 code=code,
                 file_path=file_path,
                 start_line=start,
                 end_line=end,
                 language="python",
-                loop_kind="for",
-                condition=f"{self._expr_to_str(py_node.target)} in {self._expr_to_str(py_node.iter)}",
+                loop_kind=type(py_node).__name__.lower(),
+                condition=self._expr_to_str(getattr(py_node, "test", None)),
             )
-        elif isinstance(py_node, ast.While):
-            converted = LoopNode(
-                name=None,
-                code=code,
-                file_path=file_path,
-                start_line=start,
-                end_line=end,
-                language="python",
-                loop_kind="while",
-                condition=self._expr_to_str(py_node.test),
-            )
+
         elif isinstance(py_node, (ast.Import, ast.ImportFrom)):
-            module_name = getattr(py_node, "module", "") or ""
-            alias_name = None
-            if getattr(py_node, "names", None):
-                alias_name = ", ".join(
-                    alias.name if alias.asname is None else f"{alias.name} as {alias.asname}"
-                    for alias in py_node.names
-                )
-                if isinstance(py_node, ast.Import):
-                    module_name = alias_name
-            converted = ImportNode(
+            return ImportNode(
                 name=None,
                 code=code,
                 file_path=file_path,
                 start_line=start,
                 end_line=end,
                 language="python",
-                module=module_name,
-                alias=alias_name,
+                module=getattr(py_node, "module", "") or "",
+                alias="",
             )
+
         elif isinstance(py_node, ast.Return):
-            converted = ReturnNode(
+            return ReturnNode(
                 name=None,
                 code=code,
                 file_path=file_path,
@@ -181,33 +145,12 @@ class PythonParser(BaseParser):
                 language="python",
                 value=self._expr_to_str(py_node.value),
             )
-        else:
-            converted = UnifiedNode(
-                node_type=type(py_node).__name__.lower(),
-                name=None,
-                code=code,
-                file_path=file_path,
-                start_line=start,
-                end_line=end,
-                language="python",
-            )
 
-        self._attach_children(converted, py_node, file_path, source)
-        return converted
+        return None
 
-    def _attach_children(
-        self,
-        parent: UnifiedNode,
-        py_node: ast.AST,
-        file_path: str,
-        source: str,
-    ) -> None:
-        """Convert and attach direct child AST nodes recursively."""
-        for child in ast.iter_child_nodes(py_node):
-            converted_child = self._convert_node(child, file_path, source)
-            if converted_child:
-                parent.add_child(converted_child)
-
+    # ==============================
+    # HELPERS
+    # ==============================
     @staticmethod
     def _expr_to_str(expr: Optional[ast.AST]) -> str:
         if expr is None:
@@ -218,7 +161,7 @@ class PythonParser(BaseParser):
             return ""
 
     def _call_arguments(self, node: ast.Call) -> List[str]:
-        args = [self._expr_to_str(arg) for arg in node.args]
+        args = [self._expr_to_str(a) for a in node.args]
         kwargs = [f"{kw.arg}={self._expr_to_str(kw.value)}" for kw in node.keywords if kw.arg]
         return args + kwargs
 
@@ -232,10 +175,6 @@ class PythonParser(BaseParser):
         return []
 
     def _assignment_value(self, node: ast.AST) -> str:
-        if isinstance(node, ast.Assign):
-            return self._expr_to_str(node.value)
-        if isinstance(node, ast.AnnAssign):
-            return self._expr_to_str(node.value)
-        if isinstance(node, ast.AugAssign):
-            return self._expr_to_str(node.value)
+        if isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
+            return self._expr_to_str(getattr(node, "value", None))
         return ""

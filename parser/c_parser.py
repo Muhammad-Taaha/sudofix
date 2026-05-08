@@ -43,7 +43,7 @@ class CParser(BaseParser):
             converted = self._convert_node(child, file_path, source_bytes)
             if converted:
                 module.add_child(converted)
-        return module
+        return List[UnifiedNode]
 
     def _convert_node(
         self, node: Node, file_path: str, source_bytes: bytes

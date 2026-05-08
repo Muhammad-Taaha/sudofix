@@ -3,7 +3,7 @@ from pathlib import Path
 from parser.file_walker import RepoWalker
 from parser.detectors import FileDetector
 from parser.parser_factory import ParserFactory
-from sastscanner.taint.taint_analysis import TaintEngine
+from sastscanner.taint.taint_engine import TaintEngine
 import os
 import hashlib
 
@@ -14,25 +14,26 @@ class RepoScanner:
         self.walker = RepoWalker(self.repo_path)
         self.detector = FileDetector(repo_path)
 
-        #  TAINT ENGINE INITIALIZED ONCE
-        self.taint_engine = TaintEngine()
-
     def local_scanner(self):
         files = self.walker.get_tracked_files()
         parsed_chunks = []
 
         excluded_extensions = {
-            ".png", ".jpg", ".jpeg", ".gif", ".pdf",
-            ".pyc", ".exe", ".bin", ".pkl",
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".gif",
+            ".pdf",
+            ".pyc",
+            ".exe",
+            ".bin",
+            ".pkl",
         }
 
-        excluded_files = {
-            ".env", "package-lock.json", "yarn.lock", ".gitignore"
-        }
+        excluded_files = {".env", "package-lock.json", "yarn.lock", ".gitignore"}
 
-        excluded_dirs = {
-            ".git", "__pycache__", "node_modules", "venv", ".venv"
-        }
+        excluded_dirs = {".git", "__pycache__", "node_modules", "venv", ".venv",    "target","node_modules",".git",
+        "dist","build"}
 
         for file_path in files:
             full_path = os.path.join(self.repo_path, file_path)
@@ -59,25 +60,26 @@ class RepoScanner:
 
             try:
                 nodes = parser.parse(full_path)
+
+                # 🔥 FIX: normalize nodes to list
+                if not isinstance(nodes, list):
+                    nodes = [nodes]
+
             except Exception as e:
                 print(f"❌ Parse error in {file_path}: {e}")
                 continue
 
             # -----------------------------
-            #  TAINT ANALYSIS STEP
+            # 🔥 TAINT ANALYSIS (per file)
             # -----------------------------
-            taint_findings = self.taint_engine.analyze(nodes)
+            taint_engine = TaintEngine()
+            taint_findings = taint_engine.analyze(nodes)
 
             # -----------------------------
             # CONVERT NODES → CHUNKS
-            # (now enriched with taint info)
             # -----------------------------
             for node in nodes:
-                chunk = self._node_to_chunk(
-                    node,
-                    file_path,
-                    taint_findings
-                )
+                chunk = self._node_to_chunk(node, file_path, taint_findings)
                 parsed_chunks.append(chunk)
 
         return parsed_chunks
@@ -97,18 +99,20 @@ class RepoScanner:
 
             try:
                 nodes = parser.parse(str(file_path))
+
+                # 🔥 FIX: normalize nodes
+                if not isinstance(nodes, list):
+                    nodes = [nodes]
+
             except Exception:
                 continue
 
-            # 🔥 TAINT ANALYSIS
-            taint_findings = self.taint_engine.analyze(nodes)
+            # 🔥 TAINT ANALYSIS (per file)
+            taint_engine = TaintEngine()
+            taint_findings = taint_engine.analyze(nodes)
 
             for node in nodes:
-                chunk = self._node_to_chunk(
-                    node,
-                    str(file_path),
-                    taint_findings
-                )
+                chunk = self._node_to_chunk(node, str(file_path), taint_findings)
                 parsed_chunks.append(chunk)
 
         return parsed_chunks
@@ -117,11 +121,9 @@ class RepoScanner:
     # NODE → CHUNK CONVERSION
     # -----------------------------
     def _node_to_chunk(self, node, file_path: str, taint_findings=None) -> dict:
-        content = node.code
+        content = getattr(node, "code", "")
 
-        chunk_hash = hashlib.sha256(
-            content.encode("utf-8")
-        ).hexdigest()
+        chunk_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
 
         return {
             "repo_name": str(self.repo_path),
@@ -132,21 +134,21 @@ class RepoScanner:
             "chunk_hash": chunk_hash,
             "commit_hash": None,
             "parent_chunk_id": None,
-
-            "start_line": node.start_line,
-            "end_line": node.end_line,
+            "start_line": getattr(node, "start_line", None),
+            "end_line": getattr(node, "end_line", None),
             "content": content,
-
-            # 🔥 TAINT ANALYSIS RESULT ATTACHED HERE
+            # 🔥 TAINT FINDINGS ATTACHED
             "taint_findings": taint_findings or [],
-
             "metadata": {
-                "language": node.language,
+                "language": getattr(node, "language", "unknown"),
                 "role": "source",
-                "parse_strategy": "tree-sitter" if node.language != "python" else "ast",
+                "parse_strategy": (
+                    "tree-sitter"
+                    if getattr(node, "language", "") != "python"
+                    else "ast"
+                ),
                 "service": None,
             },
-
             "modified": True,
             "tags": [],
         }
