@@ -9,11 +9,11 @@ load_dotenv()
 
 class DatabaseConnection:
     def __init__(self):
-        self.user = os.getenv("DB_USER", "devuser")
-        self.password = os.getenv("DB_PASSWORD", "devpass")
+        self.user = os.getenv("DB_USER", "postgres")
+        self.password = os.getenv("DB_PASSWORD", "!m68My2n8")
         self.host = os.getenv("DB_HOST", "localhost")
         self.port = int(os.getenv("DB_PORT", 5432))
-        self.database = os.getenv("DB_NAME", "code_docs")
+        self.database = os.getenv("DB_NAME", "repo_llm")
         self.cursor_factory = RealDictCursor
 
     def connect(self):

@@ -1,5 +1,9 @@
 .venv
-.evn
+__pycache__/
+*.pyc
+
+
+.env
 vector_store/docs.index
 vector_store/metadata.pkl
 dataset/
@@ -10,3 +14,8 @@ __pycache__/
 
 Testing_files_for_scancode/
 scancode-toolkit/
+
+
+scancode-toolkit/
+Testing_files_for_scancode/repos_testing/
+Testing_files_for_scancode/
