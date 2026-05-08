@@ -4,3 +4,9 @@ vector_store/docs.index
 vector_store/metadata.pkl
 dataset/
 rag/
+
+__pycache__/
+*.pyc
+
+Testing_files_for_scancode/
+scancode-toolkit/
