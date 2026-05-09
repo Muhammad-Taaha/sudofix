@@ -33,3 +33,16 @@ class BaseRule(ABC):
         Returns a list of Findings (empty if none).
         """
         pass
+  
+    def _get_language(self, chunk):
+    # Try from chunk first
+        lang = chunk.get("language")
+        if lang:
+            return lang.lower()
+        # Otherwise, get from first AST node
+        nodes = chunk.get("nodes", [])
+        if nodes:
+            lang = getattr(nodes[0], "language", "")
+            if lang:
+                return lang.lower()
+        return ""

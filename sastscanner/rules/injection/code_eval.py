@@ -1,7 +1,8 @@
-from typing import List, Dict, Any
 import re
+from typing import List, Dict, Any
 from ..base_rule import BaseRule
 from ...findings.finding import Finding
+from parser.ast_nodes import CallNode
 
 class CodeEvalRule(BaseRule):
     @property
@@ -16,47 +17,64 @@ class CodeEvalRule(BaseRule):
     def cwe_id(self) -> str:
         return "CWE-95"
 
-    def check(self, node: Dict[str, Any], context: Dict[str, Any]) -> List[Finding]:
-        lang = node.get("language", "").lower()
-        ast_node = node.get("ast_node")
-
-        # AST path for Python
-        if lang == "python" and ast_node and getattr(ast_node, "node_type", "") == "call":
-            callee = getattr(ast_node, "callee", "")
-            if callee in ["eval", "exec"]:
-                args = getattr(ast_node, "arguments", [])
-                tainted = any(
-                    arg.strip() and not (arg.strip().startswith(('"', "'")) and arg.strip().endswith(arg.strip()[0]))
-                    for arg in args
-                )
-                if tainted:
-                    return [self._make_finding(node, ast_node, callee)]
+    def check(self, chunk: Dict[str, Any], context: Dict[str, Any]) -> List[Finding]:
+        lang = self._get_language(chunk)
+        if not lang:
             return []
 
-        # Fallback regex
-        code = node.get("content", "")
-        patterns = {
-            "python": r"\b(eval|exec)\s*\(",
-            "javascript": r"\b(eval|Function)\s*\(",
-            "java": r"ScriptEngine\.eval\s*\(",
-            "php": r"\b(eval|assert)\s*\(",
-            "ruby": r"\b(eval|instance_eval)\s*\(",
-        }
-        pat = patterns.get(lang)
-        if pat and re.search(pat, code):
-            return [self._make_finding(node, None, f"eval/exec ({lang})")]
-        return []
+        nodes = chunk.get("nodes", [])
+        findings = []
 
-    def _make_finding(self, node, ast_node, callee):
-        line_start = ast_node.start_line if ast_node else node.get("start_line", 1)
-        line_end = ast_node.end_line if ast_node else node.get("end_line", 1)
+        # AST-based detection (for languages where we have CallNode)
+        for ast_node in nodes:
+            if not isinstance(ast_node, CallNode):
+                continue
+            callee = getattr(ast_node, "callee", "")
+            if lang == "python" and callee in ("eval", "exec"):
+                # Check arguments – if any argument is not a constant literal
+                arguments = getattr(ast_node, "arguments", [])
+                for arg in arguments:
+                    if not self._is_literal(arg):
+                        findings.append(self._make_finding(chunk, ast_node, callee))
+                        break
+                else:
+                    # if arguments list empty, still report
+                    if not arguments:
+                        findings.append(self._make_finding(chunk, ast_node, callee))
+
+        # Fallback regex for languages without full AST support
+        if not findings:
+            code = chunk.get("content", "")
+            patterns = {
+                "python": r"\b(eval|exec)\s*\(",
+                "javascript": r"\b(eval|Function)\s*\(",
+                "java": r"ScriptEngine\.eval\s*\(",
+                "php": r"\b(eval|assert)\s*\(",
+                "ruby": r"\b(eval|instance_eval)\s*\(",
+            }
+            pat = patterns.get(lang)
+            if pat and re.search(pat, code):
+                findings.append(self._make_finding(chunk, None, f"eval/exec ({lang})"))
+
+        return findings
+
+    def _is_literal(self, arg: str) -> bool:
+        """Simple check: if argument is a quoted string literal, treat as constant."""
+        arg = arg.strip()
+        if (arg.startswith('"') and arg.endswith('"')) or (arg.startswith("'") and arg.endswith("'")):
+            return True
+        return False
+
+    def _make_finding(self, chunk, ast_node, callee):
+        line_start = ast_node.start_line if ast_node else chunk.get("start_line", 1)
+        line_end = ast_node.end_line if ast_node else chunk.get("end_line", 1)
         return Finding(
             rule_name=self.name,
             severity=self.severity,
-            file_path=node.get("file_path", ""),
+            file_path=chunk.get("file_path", ""),
             line_start=line_start,
             line_end=line_end,
             message=f"Dangerous dynamic code execution via `{callee}`.",
-            code_snippet="",
+            code_snippet=ast_node.code if ast_node else "",
             cwe_id=self.cwe_id
         )

@@ -2,6 +2,8 @@ from typing import List, Dict, Any
 import re
 from ..base_rule import BaseRule
 from ...findings.finding import Finding
+from parser.ast_nodes import CallNode
+from ..literal_helpers import is_constant_literal
 
 class TemplateEngineRule(BaseRule):
     @property
@@ -16,37 +18,49 @@ class TemplateEngineRule(BaseRule):
     def cwe_id(self) -> str:
         return "CWE-94"
 
-    def check(self, node: Dict[str, Any], context: Dict[str, Any]) -> List[Finding]:
-        lang = node.get("language", "").lower()
-        if lang != "python":
+    def check(self, chunk: Dict[str, Any], context: Dict[str, Any]) -> List[Finding]:
+        lang = self._get_language(chunk)
+        if not lang or lang != "python":
             return []
 
-        ast_node = node.get("ast_node")
-        if ast_node and getattr(ast_node, "node_type", "") == "call":
+        nodes = chunk.get("nodes", [])
+        findings = []
+
+        for ast_node in nodes:
+            if not isinstance(ast_node, CallNode):
+                continue
             callee = getattr(ast_node, "callee", "")
-            if any(m in callee for m in ["Template", "Environment.from_string"]):
-                args = getattr(ast_node, "arguments", [])
-                if args:
-                    first_arg = args[0].strip()
-                    if first_arg and not (first_arg.startswith(('"', "'")) and first_arg.endswith(first_arg[0])):
-                        return [self._make_finding(node, ast_node, callee)]
-            return []
+            # Check for Jinja2 Template or Environment.from_string
+            if "Template" in callee or "Environment.from_string" in callee:
+                arguments = getattr(ast_node, "arguments", [])
+                if arguments:
+                    # First argument is template string
+                    first_arg = arguments[0]
+                    if not is_constant_literal(first_arg):
+                        findings.append(self._make_finding(chunk, ast_node, callee))
+                else:
+                    # No arguments? Unlikely, but report anyway
+                    findings.append(self._make_finding(chunk, ast_node, callee))
 
-        code = node.get("content", "")
-        if re.search(r'Template\s*\(\s*[a-zA-Z_][a-zA-Z0-9_]*\s*\)', code):
-            return [self._make_finding(node, None, "Template with variable input (regex)")]
-        return []
+        # Fallback regex for safety
+        if not findings:
+            code = chunk.get("content", "")
+            # Look for Template(variable) pattern
+            if re.search(r'Template\s*\(\s*[a-zA-Z_][a-zA-Z0-9_]*\s*\)', code):
+                findings.append(self._make_finding(chunk, None, "Template with variable input (regex)"))
 
-    def _make_finding(self, node, ast_node, callee):
-        line_start = ast_node.start_line if ast_node else node.get("start_line", 1)
-        line_end = ast_node.end_line if ast_node else node.get("end_line", 1)
+        return findings
+
+    def _make_finding(self, chunk, ast_node, callee):
+        line_start = ast_node.start_line if ast_node else chunk.get("start_line", 1)
+        line_end = ast_node.end_line if ast_node else chunk.get("end_line", 1)
         return Finding(
             rule_name=self.name,
             severity=self.severity,
-            file_path=node.get("file_path", ""),
+            file_path=chunk.get("file_path", ""),
             line_start=line_start,
             line_end=line_end,
             message=f"Potential SSTI via `{callee}` with user-controlled template.",
-            code_snippet="",
+            code_snippet=ast_node.code if ast_node else "",
             cwe_id=self.cwe_id
         )

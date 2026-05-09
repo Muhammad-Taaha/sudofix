@@ -32,9 +32,7 @@ class CommandInjectionRule(BaseRule):
             with open(json_path) as f:
                 data = json.load(f)
             for entry in data:
-        lang = self._get_language(chunk)
-        if not lang:
-            return []
+                lang = entry.get("language")
                 name = entry.get("name")
                 cwe = entry.get("cwe", "")
                 if cwe == "CWE-78":
@@ -68,14 +66,10 @@ class CommandInjectionRule(BaseRule):
             return []
 
         # Determine language from the first node (all nodes in chunk share same language)
-        lang = self._get_language(chunk)
-        if not lang:
-            return []
+        lang = getattr(nodes[0], "language", "").lower()
         if not lang:
             # Fallback to chunk's language key if present
-        lang = self._get_language(chunk)
-        if not lang:
-            return []
+            lang = chunk.get("language", "").lower()
         if lang not in self._sink_cache:
             return []
 
