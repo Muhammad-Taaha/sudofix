@@ -23,7 +23,7 @@ class RepoScanner:
 
         excluded_extensions = {
             ".png", ".jpg", ".jpeg", ".gif", ".pdf",
-            ".pyc", ".exe", ".bin", ".pkl",
+            ".pyc", ".exe", ".bin", ".pkl",'tflite'
         }
 
         excluded_files = {
@@ -81,7 +81,8 @@ class RepoScanner:
             # -----------------------------
             taint_engine = TaintEngine()
             taint_findings = taint_engine.analyze(nodes)
-
+            if not taint_findings:
+                print("the taint engine found nothing")
             # -----------------------------
             # BUILD CHUNKS (FIXED: include nodes list)
             # -----------------------------
