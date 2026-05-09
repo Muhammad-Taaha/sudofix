@@ -14,54 +14,54 @@ class RepoScanner:
         self.walker = RepoWalker(self.repo_path)
         self.detector = FileDetector(repo_path)
 
+    # ==============================
+    # LOCAL SCANNER
+    # ==============================
     def local_scanner(self):
         files = self.walker.get_tracked_files()
         parsed_chunks = []
 
         excluded_extensions = {
-            ".png",
-            ".jpg",
-            ".jpeg",
-            ".gif",
-            ".pdf",
-            ".pyc",
-            ".exe",
-            ".bin",
-            ".pkl",
+            ".png", ".jpg", ".jpeg", ".gif", ".pdf",
+            ".pyc", ".exe", ".bin", ".pkl",
         }
 
-        excluded_files = {".env", "package-lock.json", "yarn.lock", ".gitignore"}
+        excluded_files = {
+            ".env", "package-lock.json", "yarn.lock", ".gitignore"
+        }
 
-        excluded_dirs = {".git", "__pycache__", "node_modules", "venv", ".venv",    "target","node_modules",".git",
-        "dist","build"}
+        excluded_dirs = {
+            ".git", "__pycache__", "node_modules",
+            "venv", ".venv", "target", "dist", "build"
+        }
 
         for file_path in files:
-            full_path = os.path.join(self.repo_path, file_path)
+            full_path = self.repo_path / file_path
 
-            if not os.path.exists(full_path):
+            if not full_path.exists() or full_path.is_dir():
                 continue
 
-            if os.path.isdir(full_path):
+            if full_path.suffix.lower() in excluded_extensions:
                 continue
 
-            ext = os.path.splitext(file_path)[1].lower()
-            if ext in excluded_extensions or file_path in excluded_files:
+            if file_path in excluded_files:
                 continue
 
             if any(d in file_path for d in excluded_dirs):
                 continue
 
+            print(f"\n🧪 Parsing: {file_path}")
+
             # -----------------------------
-            # PARSE FILE → AST NODES
+            # PARSE FILE
             # -----------------------------
-            parser = ParserFactory.get_parser(full_path)
+            parser = ParserFactory.get_parser(str(full_path))
             if not parser:
                 continue
 
             try:
-                nodes = parser.parse(full_path)
+                nodes = parser.parse(str(full_path))
 
-                # 🔥 FIX: normalize nodes to list
                 if not isinstance(nodes, list):
                     nodes = [nodes]
 
@@ -70,20 +70,32 @@ class RepoScanner:
                 continue
 
             # -----------------------------
-            # 🔥 TAINT ANALYSIS (per file)
+            # SKIP EMPTY AST SAFELY
+            # -----------------------------
+            if not nodes:
+                print("📄 EMPTY AST → skipping")
+                continue
+
+            # -----------------------------
+            # TAINT ANALYSIS
             # -----------------------------
             taint_engine = TaintEngine()
             taint_findings = taint_engine.analyze(nodes)
 
             # -----------------------------
-            # CONVERT NODES → CHUNKS
+            # BUILD CHUNKS (FIXED: include nodes list)
             # -----------------------------
             for node in nodes:
-                chunk = self._node_to_chunk(node, file_path, taint_findings)
+                chunk = self._node_to_chunk(node, str(file_path), taint_findings)
+                # 🔥 CRITICAL FIX: add the original node(s) to the chunk
+                chunk["nodes"] = [node]   # <-- ensures main.py sees non‑empty AST
                 parsed_chunks.append(chunk)
 
         return parsed_chunks
 
+    # ==============================
+    # GITHUB WEBHOOK SCANNER
+    # ==============================
     def github_webhook_scanner(self, changed_files: List[str]):
         parsed_chunks = []
 
@@ -99,30 +111,46 @@ class RepoScanner:
 
             try:
                 nodes = parser.parse(str(file_path))
-
-                # 🔥 FIX: normalize nodes
                 if not isinstance(nodes, list):
                     nodes = [nodes]
-
             except Exception:
                 continue
 
-            # 🔥 TAINT ANALYSIS (per file)
+            if not nodes:
+                continue
+
             taint_engine = TaintEngine()
             taint_findings = taint_engine.analyze(nodes)
 
             for node in nodes:
                 chunk = self._node_to_chunk(node, str(file_path), taint_findings)
+                chunk["nodes"] = [node]   # same fix
                 parsed_chunks.append(chunk)
 
         return parsed_chunks
 
-    # -----------------------------
-    # NODE → CHUNK CONVERSION
-    # -----------------------------
+    # ==============================
+    # NODE → CHUNK
+    # ==============================
     def _node_to_chunk(self, node, file_path: str, taint_findings=None) -> dict:
-        content = getattr(node, "code", "")
 
+        # -----------------------------
+        # SAFE CONTENT EXTRACTION
+        # -----------------------------
+        content = (
+            getattr(node, "code", None)
+            or getattr(node, "text", None)
+            or getattr(node, "value", None)
+        )
+
+        if content is None:
+            content = ""
+
+        content = str(content)
+
+        # -----------------------------
+        # SAFE HASHING
+        # -----------------------------
         chunk_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
 
         return {
@@ -137,7 +165,6 @@ class RepoScanner:
             "start_line": getattr(node, "start_line", None),
             "end_line": getattr(node, "end_line", None),
             "content": content,
-            # 🔥 TAINT FINDINGS ATTACHED
             "taint_findings": taint_findings or [],
             "metadata": {
                 "language": getattr(node, "language", "unknown"),
@@ -151,4 +178,5 @@ class RepoScanner:
             },
             "modified": True,
             "tags": [],
+            # 🔥 "nodes" will be added by the caller
         }

@@ -25,26 +25,19 @@ class RustParser(BaseParser):
         return [".rs"]
 
     # =====================================================
-    # MAIN ENTRY → FLAT LIST ONLY
+    # MAIN ENTRY → FLAT LIST OF DEFINITIONS ONLY
     # =====================================================
     def parse(self, file_path: str) -> List[UnifiedNode]:
-
         with open(file_path, "r", encoding="utf-8") as f:
             source = f.read()
-
         source_bytes = source.encode("utf-8")
         tree = self.parser.parse(source_bytes)
-        root = tree.root_node
-
         nodes: List[UnifiedNode] = []
-
-        for child in root.children:
-            self._collect_nodes(child, file_path, source_bytes, nodes)
-
+        self._collect_nodes(tree.root_node, file_path, source_bytes, nodes)
         return nodes
 
     # =====================================================
-    # FLATTEN COLLECTOR (NO TREE)
+    # SMART COLLECTOR – no recursion inside complete items
     # =====================================================
     def _collect_nodes(
         self,
@@ -53,17 +46,63 @@ class RustParser(BaseParser):
         source_bytes: bytes,
         out: List[UnifiedNode],
     ):
+        # Skip punctuation, comments, and other noise
+        if self._is_trivial_node(node.type):
+            return
 
-        converted = self._convert_node(node, file_path, source_bytes)
-        if converted:
-            out.append(converted)
+        # If this is a complete definition (function, struct, etc.),
+        # add it and stop recursing into its children.
+        if self._is_complete_node(node.type):
+            converted = self._convert_node(node, file_path, source_bytes)
+            if converted:
+                out.append(converted)
+            return  # 🔥 NO recursion – body is already inside the node's code
 
-        # recurse ONLY for extraction, NOT structure
+        # Otherwise, recurse to find complete items inside
         for child in node.children:
             self._collect_nodes(child, file_path, source_bytes, out)
 
     # =====================================================
-    # CONVERSION ONLY (NO CHILDREN)
+    # HELPER: detect nodes that are complete, top‑level items
+    # =====================================================
+    def _is_complete_node(self, node_type: str) -> bool:
+        complete_types = {
+            "function_item",
+            "struct_item",
+            "enum_item",
+            "impl_item",
+            "trait_item",
+            "const_item",
+            "static_item",
+            "type_item",
+            "mod_item",
+            "macro_invocation",     # macro definitions often count as items
+            "use_declaration",
+            "closure_expression",   # if you want each closure as a separate chunk
+        }
+        return node_type in complete_types
+
+    # =====================================================
+    # HELPER: skip trivial/punctuation nodes
+    # =====================================================
+    def _is_trivial_node(self, node_type: str) -> bool:
+        trivial_types = {
+            "{", "}", "(", ")", "[", "]", ";", ",", ".",
+            ":", "::", "->", "=>", "=", "!", "?", "@", "#",
+            "line_comment", "block_comment", "comment",
+            "whitespace", "newline", "identifier", "keyword",
+            "type_identifier", "field_identifier", "primitive_type",
+            "visibility_modifier", "attribute_item", "attribute",
+            "self", "super", "crate",
+            "block", "statement_block", "declaration_list",
+            "token_tree", "macro_rule", "macro_pattern",
+            "parameters", "parameter", "reference_type", "type_arguments",
+            "generic_type",
+        }
+        return node_type in trivial_types
+
+    # =====================================================
+    # CONVERSION (unchanged)
     # =====================================================
     def _convert_node(
         self, node: Node, file_path: str, source_bytes: bytes
@@ -169,6 +208,7 @@ class RustParser(BaseParser):
                 language="rust",
             )
 
+        # For any other node that reached here (shouldn't happen after complete/trivial filters)
         return UnifiedNode(
             node_type=node_type,
             name=name,
@@ -180,7 +220,7 @@ class RustParser(BaseParser):
         )
 
     # =====================================================
-    # HELPERS (UNCHANGED)
+    # HELPERS (unchanged)
     # =====================================================
     def _extract_assignment_parts(self, node: Node, source_bytes: bytes):
         if node.type == "assignment_expression":

@@ -77,12 +77,34 @@ def run_llm(repo_path: str, command: str):
         # MAIN LOOP
         # =========================================================
         for chunk in all_chunks:
+            # -----------------------------------------------------------------
+            # 🔥 FIX: ensure 'nodes' exists; if not, try to build from content
+            # -----------------------------------------------------------------
+            if "nodes" not in chunk:
+                # Fallback for old‑style chunks (e.g., from GenericChunker)
+                # Create a minimal node from the content
+                from parser.ast_nodes import UnifiedNode
+                chunk["nodes"] = [
+                    UnifiedNode(
+                        node_type="unknown",
+                        name=None,
+                        code=chunk.get("content", ""),
+                        file_path=chunk.get("file_path", "unknown"),
+                        start_line=chunk.get("start_line", 0),
+                        end_line=chunk.get("end_line", 0),
+                        language=chunk.get("metadata", {}).get("language", "unknown"),
+                    )
+                ]
+
+            nodes = chunk.get("nodes", [])
+            if not nodes:
+                print("Empty AST (no nodes)")
+                continue
 
             file_path = chunk.get("file_path", "unknown")
             file_name = os.path.basename(file_path)
 
             language = chunk.get("metadata", {}).get("language", "unknown")
-            nodes = chunk.get("nodes") or []
 
             print("\n" + "=" * 70)
 
