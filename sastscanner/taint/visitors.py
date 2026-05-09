@@ -1,67 +1,103 @@
+import re
 from parser.ast_nodes import CallNode, AssignNode
 
 
 class TaintVisitor:
-    def __init__(self, state, rules, lang):
+    def __init__(self, state, rules, language: str):
         self.state = state
         self.rules = rules
-        self.lang = lang
-        self.vulnerabilities = []
+        self.language = language
 
     def visit(self, node):
-        if not node:
+        node_type = getattr(node, "node_type", None)
+
+        if node_type == "call":
+            self.visit_CallNode(node)
+        elif node_type == "assign":
+            self.visit_AssignNode(node)
+
+    def visit_CallNode(self, node):
+        callee = getattr(node, "callee", "")
+        if not callee:
             return
 
-        node_type = getattr(node, "type", None)
-        if not node_type:
+        # ----- 1. DIRECT SINK DETECTION (even without taint) -----
+        if self.rules.is_sink(callee, self.language):
+            # Immediate security issue – always report
+            self.state.add_issue({
+                "type": "taint",
+                "sink": callee,
+                "line": node.start_line,
+                "code": node.code[:200],
+                "language": self.language,
+                "message": f"Dangerous function call: {callee}",
+                "severity": "high"
+            })
+            # Also treat arguments as tainted (for propagation)
+            args = getattr(node, "arguments", [])
+            for arg in args:
+                self._taint_vars_in_string(arg)
+
+        # ----- 2. TAINT PROPAGATION -----
+        # Check if callee is a source – mark its return value as tainted (handled in AssignNode)
+        if self.rules.is_source(callee, self.language):
+            # We'll rely on the AssignNode that captures the return value
+            # For now, we can taint a special marker; but better to handle in AssignNode.
+            pass
+
+        # If any argument is tainted, raise a data‑flow issue
+        args = getattr(node, "arguments", [])
+        tainted_args = []
+        for arg in args:
+            if isinstance(arg, str):
+                vars_in_arg = re.findall(r'\b[a-zA-Z_][a-zA-Z0-9_]*\b', arg)
+                for var in vars_in_arg:
+                    if self.state.is_tainted(var):
+                        tainted_args.append(var)
+        if tainted_args:
+            self.state.add_issue({
+                "type": "taint_flow",
+                "sink": callee,
+                "line": node.start_line,
+                "code": node.code[:200],
+                "language": self.language,
+                "tainted_arguments": tainted_args,
+                "message": f"User‑controlled data reaches {callee} (tainted: {', '.join(tainted_args)})"
+            })
+
+    def visit_AssignNode(self, node):
+        targets = getattr(node, "targets", [])
+        value = getattr(node, "value", "")
+        if not targets:
             return
 
-        method = f"visit_{node_type.lower()}"
-        visitor = getattr(self, method, self.generic_visit)
-        visitor(node)
-    def generic_visit(self, node):
-        for child in getattr(node, "children", []):
-            self.visit(child)
+        # Determine if RHS is tainted
+        rhs_tainted = False
 
-    # ==============================
-    # ASSIGNMENT TRACKING
-    # ==============================
-    def visit_AssignNode(self, node: AssignNode):
-        target = getattr(node, "target", None)
-        value = getattr(node, "value", None)
+        # Check if RHS is a source call (e.g., input())
+        if isinstance(value, str):
+            if self.rules.is_source(value, self.language):
+                rhs_tainted = True
+            # Check for variables in RHS that are already tainted
+            vars_in_rhs = re.findall(r'\b[a-zA-Z_][a-zA-Z0-9_]*\b', value)
+            for var in vars_in_rhs:
+                if self.state.is_tainted(var):
+                    rhs_tainted = True
+                    break
 
-        # Case: x = input()
-        if isinstance(value, CallNode):
-            if self.rules.is_source(value.name, self.lang):
-                self.state.taint(target)
+        if rhs_tainted:
+            for target in targets:
+                if isinstance(target, str):
+                    self.state.taint_var(target)
+                else:
+                    # Extract variable names from compound targets (tuples, lists)
+                    names = re.findall(r'\b[a-zA-Z_][a-zA-Z0-9_]*\b', str(target))
+                    for name in names:
+                        self.state.taint_var(name)
 
-        # Case: x = y
-        elif isinstance(value, str):
-            if self.state.is_tainted(value):
-                self.state.taint(target)
-
-        self.generic_visit(node)
-
-    # ==============================
-    # FUNCTION CALL TRACKING
-    # ==============================
-    def visit_CallNode(self, node: CallNode):
-        func_name = node.name
-
-        # 🚨 Check sink
-        if self.rules.is_sink(func_name, self.lang):
-            for arg in node.args:
-                if isinstance(arg, str) and self.state.is_tainted(arg):
-                    self.vulnerabilities.append({
-                        "type": "TAINT_FLOW",
-                        "message": f"Tainted data passed to sink: {func_name}",
-                        "node": node
-                    })
-
-        # Track propagation via function args
-        for arg in node.args:
-            if isinstance(arg, str) and self.state.is_tainted(arg):
-                # Example: dangerous_func(x) → mark return or effect
-                pass
-
-        self.generic_visit(node)
+    def _taint_vars_in_string(self, s: str):
+        if not isinstance(s, str):
+            return
+        vars_in = re.findall(r'\b[a-zA-Z_][a-zA-Z0-9_]*\b', s)
+        for var in vars_in:
+            self.state.taint_var(var)

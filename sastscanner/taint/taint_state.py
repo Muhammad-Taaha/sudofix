@@ -1,13 +1,14 @@
 class TaintState:
     def __init__(self):
         self.tainted_vars = set()
-        self.issues = []   # ✅ ADD THIS
+        self.issues = []
 
-    def taint(self, var: str):
-        self.tainted_vars.add(var)
+    def taint_var(self, var: str):
+        if var:
+            self.tainted_vars.add(var)
 
     def is_tainted(self, var: str) -> bool:
-        return var in self.tainted_vars 
+        return var in self.tainted_vars
 
     def add_issue(self, issue: dict):
         self.issues.append(issue)
@@ -17,4 +18,4 @@ class TaintState:
         self.issues.clear()
 
     def __len__(self):
-        return len(self.issues)   # ✅ NOW VALID
+        return len(self.issues)

@@ -8,28 +8,18 @@ class TaintEngine:
     def __init__(self, language: str = "python"):
         self.language = language
         self.rules = TaintRules()
-
-        # proper state object
         self.state = TaintState()
 
-        # visitor gets engine reference
-        self.visitor = TaintVisitor(self.state, self.rules, self.language)
-
-    # ==============================
-    # ENTRY POINT
-    # ==============================
-    def analyze(self, nodes: List, language: str = "generic"):
+    def analyze(self, nodes: List, language: str = "generic") -> List:
+        lang = language if language != "generic" else self.language
+        visitor = TaintVisitor(self.state, self.rules, lang)
         self.state.reset()
-
-        if not nodes:
-            return []
 
         for node in nodes:
             if node is None:
                 continue
-
             try:
-                self.visitor.visit(node)
+                visitor.visit(node)
             except Exception:
                 continue
 

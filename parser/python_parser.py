@@ -22,7 +22,6 @@ class PythonParser(BaseParser):
     # MAIN ENTRY
     # ==============================
     def parse(self, file_path: str) -> List[UnifiedNode]:
-
         with open(file_path, "r", encoding="utf-8") as f:
             source = f.read()
 
@@ -33,7 +32,7 @@ class PythonParser(BaseParser):
 
         nodes: List[UnifiedNode] = []
 
-        for node in ast.walk(tree):   # 🔥 FLAT traversal
+        for node in ast.walk(tree):   # flat traversal
             converted = self._convert_node(node, file_path, source)
             if converted:
                 nodes.append(converted)
@@ -41,7 +40,7 @@ class PythonParser(BaseParser):
         return nodes
 
     # ==============================
-    # CONVERSION (NO CHILDREN)
+    # CONVERSION
     # ==============================
     def _convert_node(
         self,
@@ -155,6 +154,9 @@ class PythonParser(BaseParser):
     def _expr_to_str(expr: Optional[ast.AST]) -> str:
         if expr is None:
             return ""
+        # Handle variable names directly – they become `user_cmd`, not `'user_cmd'`
+        if isinstance(expr, ast.Name):
+            return expr.id
         try:
             return ast.unparse(expr)
         except Exception:
@@ -163,6 +165,8 @@ class PythonParser(BaseParser):
     def _call_arguments(self, node: ast.Call) -> List[str]:
         args = [self._expr_to_str(a) for a in node.args]
         kwargs = [f"{kw.arg}={self._expr_to_str(kw.value)}" for kw in node.keywords if kw.arg]
+        # Debug print (remove after confirming it works)
+        print(f"DEBUG: args = {args}, kwargs = {kwargs}")
         return args + kwargs
 
     def _assignment_targets(self, node: ast.AST) -> List[str]:

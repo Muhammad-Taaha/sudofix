@@ -1,10 +1,10 @@
 import json
+import re
 from pathlib import Path
-from typing import List, Dict, Any, Set
+from typing import List, Set, Dict
 from ..base_rule import BaseRule
 from ...findings.finding import Finding
 from parser.ast_nodes import CallNode
-from ..literal_helpers import is_constant_literal
 
 class CommandInjectionRule(BaseRule):
     @property
@@ -37,7 +37,6 @@ class CommandInjectionRule(BaseRule):
                 cwe = entry.get("cwe", "")
                 if cwe == "CWE-78":
                     cls._sink_cache.setdefault(lang, set()).add(name)
-        # Legacy sinks (high confidence)
         legacy = {
             "python": {"system", "popen", "Popen", "exec", "call", "check_call", "check_output", "run"},
             "javascript": {"exec", "execSync", "spawn", "fork"},
@@ -61,26 +60,53 @@ class CommandInjectionRule(BaseRule):
     def _get_base_name(callee: str) -> str:
         return callee.split('.')[-1].replace('()', '')
 
-    def check(self, node, context):
-        lang = node.get("language", "").lower()
+    def check(self, chunk, context):
+        nodes = chunk.get("nodes", [])
+        if not nodes:
+            return []
+
+        # Determine language from the first node (all nodes in chunk share same language)
+        lang = getattr(nodes[0], "language", "").lower()
+        if not lang:
+            # Fallback to chunk's language key if present
+            lang = chunk.get("language", "").lower()
         if lang not in self._sink_cache:
             return []
-        ast_node = node.get("ast_node")
-        if not isinstance(ast_node, CallNode):
-            return []
-        base = self._get_base_name(ast_node.callee)
-        if base not in self._sink_cache[lang]:
-            return []
-        for arg in ast_node.arguments:
-            if not is_constant_literal(arg):
-                return [self._create_finding(node, ast_node, ast_node.callee)]
-        return []
 
-    def _create_finding(self, node, ast_node, callee):
+        findings = []
+        for ast_node in nodes:
+            if not isinstance(ast_node, CallNode):
+                continue
+
+            base = self._get_base_name(ast_node.callee)
+            if base not in self._sink_cache[lang]:
+                continue
+
+            # Simple heuristic: if the call's argument string contains any variable (not a quoted literal)
+            code = ast_node.code
+            match = re.search(r'\((.*)\)', code, re.DOTALL)
+            if match:
+                args_str = match.group(1).strip()
+                if args_str:
+                    parts = [p.strip() for p in args_str.split(',') if p.strip()]
+                    for part in parts:
+                        if not (part.startswith(('"', "'")) and part.endswith(('"', "'"))):
+                            findings.append(self._create_finding(chunk, ast_node, ast_node.callee))
+                            break
+                else:
+                    # No arguments – still a dangerous call (e.g., `os.system()`)
+                    findings.append(self._create_finding(chunk, ast_node, ast_node.callee))
+            else:
+                # No parentheses – fallback: create finding anyway
+                findings.append(self._create_finding(chunk, ast_node, ast_node.callee))
+
+        return findings
+
+    def _create_finding(self, chunk, ast_node, callee):
         return Finding(
             rule_name=self.name,
             severity=self.severity,
-            file_path=node.get("file_path", ""),
+            file_path=chunk.get("file_path", ""),
             line_start=ast_node.start_line,
             line_end=ast_node.end_line,
             message=f"Potential command injection via `{callee}` with user input.",
