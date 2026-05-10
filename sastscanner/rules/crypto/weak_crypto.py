@@ -3,10 +3,10 @@ from ..base_rule import BaseRule
 from ...findings.finding import Finding
 from parser.ast_nodes import CallNode
 
-class WeakHashRule(BaseRule):
+class WeakCryptoRule(BaseRule):
     @property
     def name(self) -> str:
-        return "Weak Cryptographic Hash"
+        return "Weak Cryptographic Algorithm"
     @property
     def severity(self) -> str:
         return "MEDIUM"
@@ -51,13 +51,14 @@ class WeakHashRule(BaseRule):
         return findings
 
     def _create_finding(self, chunk, node, algo):
+        # Positional arguments exactly as dataclass order
         return Finding(
-            rule_name=self.name,
-            severity=self.severity,
-            file_path=chunk.get("file_path", ""),
-            line_start=node.start_line,
-            line_end=node.end_line,
-            message=f"Weak hash algorithm '{algo}' used. Use SHA-256 or SHA-3.",
-            code_snippet=node.code,
-            cwe_id=self.cwe_id,
+            self.name,
+            self.severity,
+            chunk.get("file_path", ""),
+            node.start_line,
+            node.end_line,
+            f"Weak algorithm '{algo}' used. Use SHA-256 or SHA-3.",
+            node.code,
+            self.cwe_id,
         )
