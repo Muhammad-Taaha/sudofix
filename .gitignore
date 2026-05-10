@@ -9,5 +9,13 @@ vector_store/metadata.pkl
 dataset/
 rag/
 
+__pycache__/
+*.pyc
+
+Testing_files_for_scancode/
 scancode-toolkit/
+
+
+scancode-toolkit/
+Testing_files_for_scancode/repos_testing/
 Testing_files_for_scancode/
