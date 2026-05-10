@@ -1,5 +1,5 @@
 # sastscanner/taint/taint_rules.py
-
+# till now we are only sacing the variables the next step is to make the taint analysis for the datastruct
 import re
 from typing import Dict, List
 

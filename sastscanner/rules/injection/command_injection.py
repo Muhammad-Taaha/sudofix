@@ -32,13 +32,12 @@ class CommandInjectionRule(BaseRule):
             with open(json_path) as f:
                 data = json.load(f)
             for entry in data:
-        lang = self._get_language(chunk)
-        if not lang:
-            return []
+                lang = entry.get("language")
                 name = entry.get("name")
                 cwe = entry.get("cwe", "")
                 if cwe == "CWE-78":
                     cls._sink_cache.setdefault(lang, set()).add(name)
+        # Legacy sinks
         legacy = {
             "python": {"system", "popen", "Popen", "exec", "call", "check_call", "check_output", "run"},
             "javascript": {"exec", "execSync", "spawn", "fork"},
@@ -63,32 +62,18 @@ class CommandInjectionRule(BaseRule):
         return callee.split('.')[-1].replace('()', '')
 
     def check(self, chunk, context):
+        lang = self._get_language(chunk)
+        if not lang or lang not in self._sink_cache:
+            return []
         nodes = chunk.get("nodes", [])
-        if not nodes:
-            return []
-
-        # Determine language from the first node (all nodes in chunk share same language)
-        lang = self._get_language(chunk)
-        if not lang:
-            return []
-        if not lang:
-            # Fallback to chunk's language key if present
-        lang = self._get_language(chunk)
-        if not lang:
-            return []
-        if lang not in self._sink_cache:
-            return []
-
         findings = []
         for ast_node in nodes:
             if not isinstance(ast_node, CallNode):
                 continue
-
             base = self._get_base_name(ast_node.callee)
             if base not in self._sink_cache[lang]:
                 continue
-
-            # Simple heuristic: if the call's argument string contains any variable (not a quoted literal)
+            # Heuristic: check if any argument is not a literal
             code = ast_node.code
             match = re.search(r'\((.*)\)', code, re.DOTALL)
             if match:
@@ -100,12 +85,9 @@ class CommandInjectionRule(BaseRule):
                             findings.append(self._create_finding(chunk, ast_node, ast_node.callee))
                             break
                 else:
-                    # No arguments – still a dangerous call (e.g., `os.system()`)
                     findings.append(self._create_finding(chunk, ast_node, ast_node.callee))
             else:
-                # No parentheses – fallback: create finding anyway
                 findings.append(self._create_finding(chunk, ast_node, ast_node.callee))
-
         return findings
 
     def _create_finding(self, chunk, ast_node, callee):
