@@ -2,6 +2,7 @@ Rules to do:
 
 1- Disable Windows Defender if on windows 
 2- Upgrade your ram to atleast 16gb+
+3- Add the scancode path to environment variables according to where you placed it
 
 Important Info:
 	It Reduces my ram to 2.9gb after using 100% of ram.
