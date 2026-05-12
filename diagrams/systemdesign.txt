@@ -1,0 +1,35 @@
+User input (code string)
+    │
+    ▼
+[Optional] Preprocess: normalize whitespace, remove comments, strip function signatures (if too long)
+    │
+    ▼
+[Optional] Extract key tokens (function names, API calls) for keyword search
+    │
+    ▼
+┌─────────────────────────────────────────────┐
+│  Two parallel retrieval paths:              │
+│  1. Vector search on code embedding         │
+│  2. Keyword search (BM25) on code tokens    │
+└─────────────────────────────────────────────┘
+    │
+    ▼
+Merge results (Reciprocal Rank Fusion)
+    │
+    ▼
+Apply metadata filters if user specified:
+    - CWE type (e.g., "CWE-89")
+    - Minimum CVSS score
+    - Repository name
+    - Language (from file extension)
+    │
+    ▼
+Rank and return top K (e.g., 5) results
+    │
+    ▼
+Output for each result:
+    - Vulnerable code (matched)
+    - Fixed code
+    - CVE ID, CVSS score, CWE
+    - Repository, file path, commit hash
+    - Distance/similarity score
