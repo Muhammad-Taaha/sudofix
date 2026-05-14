@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 from parser.parser_factory import ParserFactory
 
+
 def inspect_ast(file_path, max_depth=3, max_nodes=30):
     file_path = Path(file_path)
     parser = ParserFactory.get_parser(str(file_path))
@@ -19,8 +20,9 @@ def inspect_ast(file_path, max_depth=3, max_nodes=30):
         print(f"  Name : {node.name}")
         print(f"  Lines: {node.start_line} - {node.end_line}")
         print(f"  Lang : {node.language}")
-        code_preview = node.code[:200].replace('\n', ' ').strip()
-        print(f"  Code : {code_preview}{'...' if len(node.code) > 200 else ''}")
+        code_preview = node.code[:200].replace("\n", " ").strip()
+        print(f"  Code : {code_preview}{
+              '...' if len(node.code) > 200 else ''}")
         print(f"  Code length : {len(node.code)} bytes")
 
         # Additional fields for specific node types (if present)
@@ -38,6 +40,7 @@ def inspect_ast(file_path, max_depth=3, max_nodes=30):
             print(f"  Children: {len(node.children)}")
         elif hasattr(node, "body") and node.body:
             print(f"  Body length: {len(node.body)}")
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

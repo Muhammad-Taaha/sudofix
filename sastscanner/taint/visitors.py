@@ -1,5 +1,4 @@
 import re
-from parser.ast_nodes import CallNode, AssignNode
 
 
 class TaintVisitor:
@@ -13,91 +12,132 @@ class TaintVisitor:
 
         if node_type == "call":
             self.visit_CallNode(node)
-        elif node_type == "assign":
+
+        elif node_type == "assignment":
             self.visit_AssignNode(node)
 
+    # =========================
+    # CALL NODE
+    # =========================
     def visit_CallNode(self, node):
         callee = getattr(node, "callee", "")
+        args = getattr(node, "arguments", [])
+
         if not callee:
             return
 
-        # ----- 1. DIRECT SINK DETECTION (even without taint) -----
-        if self.rules.is_sink(callee, self.language):
-            # Immediate security issue – always report
-            self.state.add_issue({
-                "type": "taint",
-                "sink": callee,
-                "line": node.start_line,
-                "code": node.code[:200],
-                "language": self.language,
-                "message": f"Dangerous function call: {callee}",
-                "severity": "high"
-            })
-            # Also treat arguments as tainted (for propagation)
-            args = getattr(node, "arguments", [])
+        # -------------------------
+        # SANITIZER (CALL-BASED)
+        # -------------------------
+        if self.rules.is_sanitizer(callee, self.language):
             for arg in args:
-                self._taint_vars_in_string(arg)
+                for var in re.findall(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", str(arg)):
+                    self.state.sanitize_var(var, callee)
 
-        # ----- 2. TAINT PROPAGATION -----
-        # Check if callee is a source – mark its return value as tainted (handled in AssignNode)
-        if self.rules.is_source(callee, self.language):
-            # We'll rely on the AssignNode that captures the return value
-            # For now, we can taint a special marker; but better to handle in AssignNode.
-            pass
+        # -------------------------
+        # SINK CHECK
+        # -------------------------
+        if self.rules.is_sink(callee, self.language):
 
-        # If any argument is tainted, raise a data‑flow issue
-        args = getattr(node, "arguments", [])
+            for arg in args:
+                for var in re.findall(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", str(arg)):
+
+                    info = self.state.get_var_info(var)
+
+                    if not info:
+                        continue
+
+                    if not info.get("tainted", False):
+                        continue
+
+                    if info.get("sanitized", False):
+                        continue
+
+                    self.state.add_issue(
+                        {
+                            "type": "taint",
+                            "sink": callee,
+                            "line": node.start_line,
+                            "code": node.code[:200],
+                            "language": self.language,
+                            "message": f"Tainted data reaches sink: {callee}",
+                            "severity": "HIGH",
+                        }
+                    )
+
+        # -------------------------
+        # FLOW TRACKING
+        # -------------------------
         tainted_args = []
-        for arg in args:
-            if isinstance(arg, str):
-                vars_in_arg = re.findall(r'\b[a-zA-Z_][a-zA-Z0-9_]*\b', arg)
-                for var in vars_in_arg:
-                    if self.state.is_tainted(var):
-                        tainted_args.append(var)
-        if tainted_args:
-            self.state.add_issue({
-                "type": "taint_flow",
-                "sink": callee,
-                "line": node.start_line,
-                "code": node.code[:200],
-                "language": self.language,
-                "tainted_arguments": tainted_args,
-                "message": f"User‑controlled data reaches {callee} (tainted: {', '.join(tainted_args)})"
-            })
 
+        for arg in args:
+            for var in re.findall(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", str(arg)):
+                if self.state.is_tainted(var):
+                    tainted_args.append(var)
+
+        if tainted_args:
+            self.state.add_issue(
+                {
+                    "type": "taint_flow",
+                    "sink": callee,
+                    "line": node.start_line,
+                    "code": node.code[:200],
+                    "language": self.language,
+                    "tainted_arguments": tainted_args,
+                    "message": f"Tainted flow into {callee}",
+                    "severity": "LOW",
+                }
+            )
+
+    # =========================
+    # ASSIGN NODE (FIXED SANITIZATION HANDLING)
+    # =========================
     def visit_AssignNode(self, node):
         targets = getattr(node, "targets", [])
         value = getattr(node, "value", "")
+
         if not targets:
             return
 
-        # Determine if RHS is tainted
-        rhs_tainted = False
+        value_str = str(value)
 
-        # Check if RHS is a source call (e.g., input())
+        # -------------------------
+        # 🔥 FIX 1: SANITIZER IN ASSIGNMENT
+        # x = html.escape(x)
+        # -------------------------
+        if self.rules.is_sanitizer(value_str, self.language):
+            for target in targets:
+                if isinstance(target, str):
+                    self.state.sanitize_var(target, value_str)
+            return
+
+        rhs_tainted = False
+        source_var = None
+
         if isinstance(value, str):
+
             if self.rules.is_source(value, self.language):
                 rhs_tainted = True
-            # Check for variables in RHS that are already tainted
-            vars_in_rhs = re.findall(r'\b[a-zA-Z_][a-zA-Z0-9_]*\b', value)
-            for var in vars_in_rhs:
+
+            for var in re.findall(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", value):
                 if self.state.is_tainted(var):
                     rhs_tainted = True
+                    source_var = var
                     break
 
         if rhs_tainted:
+
             for target in targets:
                 if isinstance(target, str):
-                    self.state.taint_var(target)
-                else:
-                    # Extract variable names from compound targets (tuples, lists)
-                    names = re.findall(r'\b[a-zA-Z_][a-zA-Z0-9_]*\b', str(target))
-                    for name in names:
-                        self.state.taint_var(name)
 
-    def _taint_vars_in_string(self, s: str):
-        if not isinstance(s, str):
-            return
-        vars_in = re.findall(r'\b[a-zA-Z_][a-zA-Z0-9_]*\b', s)
-        for var in vars_in:
-            self.state.taint_var(var)
+                    # -------------------------
+                    # FIX 2: PROPER PROPAGATION
+                    # -------------------------
+                    if source_var:
+                        self.state.propagate(source_var, target)
+                    else:
+                        self.state.taint_var(target)
+
+                else:
+                    for name in re.findall(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", str(target)):
+                        self.state.taint_var(name)
