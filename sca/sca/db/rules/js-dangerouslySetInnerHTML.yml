@@ -1,0 +1,6 @@
+id: js-dangerouslySetInnerHTML
+message: "Avoid dangerouslySetInnerHTML"
+severity: medium
+language: JavaScript
+rule:
+  pattern: dangerouslySetInnerHTML={{ $A }}
