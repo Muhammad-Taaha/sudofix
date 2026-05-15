@@ -73,7 +73,7 @@ repo-llm/
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/repo-llm.git
+git clone https://github.com/muhammad-taaha/sudofix.git
 cd repo-llm
 
 # Create virtual environment
