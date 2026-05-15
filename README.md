@@ -1,11 +1,11 @@
-# 🔒 Repo-LLM: Multi-Language SAST Scanner with Taint Analysis & RAG-Powered Fixes
+# 🔒 sudofix: Multi-Language SAST Scanner with Taint Analysis & RAG-Powered Fixes
 
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Languages](https://img.shields.io/badge/languages-7+-orange)](https://github.com)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-**Repo-LLM** is a production-ready Static Application Security Testing (SAST) tool that scans source code for security vulnerabilities across **7+ programming languages** using **AST-based pattern rules**, **taint analysis** (data-flow tracking), and **RAG-powered fix generation** with local LLM integration. Designed for accuracy, extensibility, and seamless CI/CD integration.
+**sudofix** is a production-ready Static Application Security Testing (SAST) tool that scans source code for security vulnerabilities across **7+ programming languages** using **AST-based pattern rules**, **taint analysis** (data-flow tracking), and **RAG-powered fix generation** with local LLM integration. Designed for accuracy, extensibility, and seamless CI/CD integration.
 
 ## ✨ Features
 
@@ -400,7 +400,7 @@ This tool performs **static analysis only** – it does not execute code. False 
 
 ## 📄 License
 
-MIT © Repo-LLM Contributors
+MIT © sudofix Contributors
 
 ## 🙏 Acknowledgements
 
