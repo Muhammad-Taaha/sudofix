@@ -1,4 +1,4 @@
-"""Detect ecosystem manifest/lockfile pairs in a project directory."""
+"""Detect ecosystem manifests and sub‑project directories in a repository."""
 
 from __future__ import annotations
 
@@ -10,7 +10,6 @@ from sca.utils import get_logger
 
 logger = get_logger(__name__)
 
-# Mapping of file patterns to ecosystem name and whether it's a manifest or lockfile
 ECOSYSTEM_MANIFESTS: Dict[str, Tuple[str, str]] = {
     "package.json": ("npm", "manifest"),
     "package-lock.json": ("npm", "lock"),
@@ -26,15 +25,15 @@ ECOSYSTEM_MANIFESTS: Dict[str, Tuple[str, str]] = {
     "Cargo.lock": ("rust", "lock"),
     "Cargo.toml": ("rust", "manifest"),
     "Package.resolved": ("swift", "lock"),
+    "Gemfile.lock": ("ruby", "lock"),
+    "packages.config": ("dotnet", "manifest"),
 }
+
+MANIFEST_FILENAMES = set(ECOSYSTEM_MANIFESTS.keys())
 
 
 def detect_manifests(root_dir: str | Path) -> Dict[str, List[str]]:
-    """
-    Walk the directory tree, find all recognized manifests/lockfiles, and group them by ecosystem.
-
-    Returns: dict like {"npm": ["path/package.json", "path/package-lock.json"], "pypi": [...], ...}
-    """
+    """Return ecosystem -> list of manifest/lockfile paths."""
     root = Path(root_dir).resolve()
     ecosystem_files: Dict[str, List[str]] = {}
 
@@ -44,8 +43,19 @@ def detect_manifests(root_dir: str | Path) -> Dict[str, List[str]]:
                 eco, _ = ECOSYSTEM_MANIFESTS[fname]
                 full_path = str(Path(dirpath) / fname)
                 ecosystem_files.setdefault(eco, []).append(full_path)
-
-    # Remove ecosystems that have no lockfile (except for ecosystems where manifest is sufficient)
-    # For now, keep all; resolvers will decide.
-    logger.debug("Detected manifest files", ecosystems=list(ecosystem_files.keys()))
     return ecosystem_files
+
+
+def detect_sub_projects(root_dir: str | Path) -> List[Path]:
+    """
+    Find all directories that contain at least one recognized manifest/lockfile.
+    Returns a list of absolute paths sorted depth‑first (deepest first) so that
+    outer projects can be identified if needed.
+    """
+    root = Path(root_dir).resolve()
+    dirs_with_manifests = set()
+    for dirpath, _, filenames in os.walk(root):
+        if any(f in MANIFEST_FILENAMES for f in filenames):
+            dirs_with_manifests.add(Path(dirpath).resolve())
+    # Sort by path depth descending so inner projects come first (optional)
+    return sorted(dirs_with_manifests, key=lambda p: len(p.relative_to(root).parts), reverse=True)
