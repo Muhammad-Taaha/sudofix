@@ -4,3 +4,4 @@ vector_store/docs.index
 vector_store/metadata.pkl
 dataset/
 rag/datasetinrag
+rag/datasetinrag.zip
