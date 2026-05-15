@@ -123,9 +123,7 @@ def store_manifest_cache(db_path: Path, manifest_hash: str, graph_blob: bytes) -
 def get_api_cache(db_path: Path, url: str) -> Optional[bytes]:
     conn = initialize_db(db_path)
     try:
-        row = conn.execute(
-            "SELECT response FROM api_cache WHERE url = ?", (url,)
-        ).fetchone()
+        row = conn.execute("SELECT response FROM api_cache WHERE url = ?", (url,)).fetchone()
         return row[0] if row else None
     finally:
         conn.close()

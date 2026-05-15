@@ -1,0 +1,6 @@
+id: python-eval
+message: "Avoid using eval()"
+severity: high
+language: Python
+rule:
+  pattern: eval($$$)

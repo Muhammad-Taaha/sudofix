@@ -12,7 +12,7 @@ from typing import List, Optional, Tuple, Union
 
 import pathspec
 
-from sca.config import DEFAULT_IGNORE_PATTERNS, DEFAULT_HASHING_WORKERS, DEFAULT_MAX_FILE_SIZE_MB
+from sca.config import DEFAULT_HASHING_WORKERS, DEFAULT_IGNORE_PATTERNS, DEFAULT_MAX_FILE_SIZE_MB
 from sca.utils import get_logger
 
 logger = get_logger(__name__)
@@ -36,18 +36,14 @@ def discover_files(
     *,
     ignore_patterns: Optional[List[str]] = None,
     max_file_size_mb: Optional[float] = DEFAULT_MAX_FILE_SIZE_MB,
+    skip_binary: bool = False,
+    skip_minified: bool = False,
 ) -> List[Path]:
-    """
-    Walk `root_dir`, skip directories/files matching .gitignore and custom patterns,
-    and return a list of absolute file paths (excluding huge files).
-    """
     root = Path(root_dir).resolve()
     if not root.is_dir():
         raise NotADirectoryError(f"Not a directory: {root}")
 
     gitignore_spec = _read_gitignore_patterns(root)
-
-    # Merge default and user-supplied ignore patterns
     all_patterns = DEFAULT_IGNORE_PATTERNS + (ignore_patterns or [])
     combined_spec = pathspec.PathSpec.from_lines("gitwildmatch", all_patterns)
 
@@ -57,17 +53,14 @@ def discover_files(
 
     files: List[Path] = []
     for dirpath, dirnames, filenames in os.walk(root):
-        # Prune ignored directories in-place
+        # Prune ignored directories
         dir_rel = Path(dirpath).relative_to(root).as_posix()
-        # If the directory itself is ignored, skip everything inside
         if dir_rel != "." and combined_spec.match_file(dir_rel):
             dirnames.clear()
             continue
 
-        # Remove ignored subdirectories
         filtered_dirs = [
-            d
-            for d in dirnames
+            d for d in dirnames
             if not combined_spec.match_file((Path(dirpath) / d).relative_to(root).as_posix())
         ]
         dirnames[:] = filtered_dirs
@@ -76,14 +69,12 @@ def discover_files(
             fpath = Path(dirpath) / fname
             rel_path = fpath.relative_to(root).as_posix()
 
-            # Apply .gitignore first (if present)
             if gitignore_spec and gitignore_spec.match_file(rel_path):
                 continue
-            # Then apply combined patterns
             if combined_spec.match_file(rel_path):
                 continue
 
-            # Skip huge files
+            # Size check
             if max_size_bytes is not None:
                 try:
                     if fpath.stat().st_size > max_size_bytes:
@@ -91,6 +82,12 @@ def discover_files(
                         continue
                 except OSError:
                     continue
+
+            # Binary / minified checks (only after fpath is defined)
+            if skip_binary and is_binary_file(fpath):
+                continue
+            if skip_minified and is_minified(fpath):
+                continue
 
             files.append(fpath.resolve())
 
@@ -134,3 +131,31 @@ def hash_files(
             except Exception:
                 logger.warning("Skipping file due to hash error", path=str(path))
     return results
+
+# Add to src/sca/file_hasher.py
+
+import magic
+
+def is_binary_file(file_path: Path) -> bool:
+    """Return True if the file is binary (not text)."""
+    try:
+        mime = magic.from_file(str(file_path), mime=True)
+        return not mime.startswith("text/") and mime != "application/json"
+    except Exception:
+        return False
+
+def is_minified(file_path: Path, max_avg_line_length: int = 200) -> bool:
+    """Heuristic: return True if the average line length > threshold (likely minified)."""
+    suffix = file_path.suffix.lower()
+    if suffix not in {".js", ".css", ".min.js", ".min.css"}:
+        return False
+    try:
+        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            lines = f.readlines()
+            if not lines:
+                return False
+            total_len = sum(len(line) for line in lines)
+            avg = total_len / len(lines)
+            return avg > max_avg_line_length
+    except Exception:
+        return False
