@@ -6,3 +6,4 @@ dataset/
 rag/datasetinrag
 rag/datasetinrag.zip
 rag/cleaned_vulnerability_dataset.csv
+vector_store/
