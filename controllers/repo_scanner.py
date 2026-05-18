@@ -1,18 +1,23 @@
 from typing import List
 from pathlib import Path
+
 from parser.file_walker import RepoWalker
 from parser.detectors import FileDetector
 from parser.parser_factory import ParserFactory
+from parser.chunking.engine import ChunkingEngine   # ✅ NEW CHUNK SYSTEM
+
 from sastscanner.taint.taint_engine import TaintEngine
-import os
-import hashlib
 
 
 class RepoScanner:
     def __init__(self, repo_path: str):
         self.repo_path = Path(repo_path)
+
         self.walker = RepoWalker(self.repo_path)
         self.detector = FileDetector(repo_path)
+
+        # ✅ CENTRALIZED CHUNKING ENGINE
+        self.chunking_engine = ChunkingEngine()
 
     # ==============================
     # LOCAL SCANNER
@@ -23,7 +28,7 @@ class RepoScanner:
 
         excluded_extensions = {
             ".png", ".jpg", ".jpeg", ".gif", ".pdf",
-            ".pyc", ".exe", ".bin", ".pkl",'tflite'
+            ".pyc", ".exe", ".bin", ".pkl", ".tflite"
         }
 
         excluded_files = {
@@ -38,6 +43,9 @@ class RepoScanner:
         for file_path in files:
             full_path = self.repo_path / file_path
 
+            # -----------------------------
+            # SKIP INVALID FILES
+            # -----------------------------
             if not full_path.exists() or full_path.is_dir():
                 continue
 
@@ -53,7 +61,7 @@ class RepoScanner:
             print(f"\n🧪 Parsing: {file_path}")
 
             # -----------------------------
-            # PARSE FILE
+            # PARSE → AST NODES
             # -----------------------------
             parser = ParserFactory.get_parser(str(full_path))
             if not parser:
@@ -61,36 +69,57 @@ class RepoScanner:
 
             try:
                 nodes = parser.parse(str(full_path))
-
                 if not isinstance(nodes, list):
                     nodes = [nodes]
-
             except Exception as e:
                 print(f"❌ Parse error in {file_path}: {e}")
                 continue
 
-            # -----------------------------
-            # SKIP EMPTY AST SAFELY
-            # -----------------------------
             if not nodes:
                 print("📄 EMPTY AST → skipping")
                 continue
 
             # -----------------------------
-            # TAINT ANALYSIS
+            # TAINT ANALYSIS (on AST)
             # -----------------------------
             taint_engine = TaintEngine()
             taint_findings = taint_engine.analyze(nodes)
-            if not taint_findings:
-                print("the taint engine found nothing")
+
             # -----------------------------
-            # BUILD CHUNKS (FIXED: include nodes list)
+            # DETECT LANGUAGE
             # -----------------------------
-            for node in nodes:
-                chunk = self._node_to_chunk(node, str(file_path), taint_findings)
-                # 🔥 CRITICAL FIX: add the original node(s) to the chunk
-                chunk["nodes"] = [node]   # <-- ensures main.py sees non‑empty AST
-                parsed_chunks.append(chunk)
+            language = nodes[0].language if nodes else "generic"
+
+            # -----------------------------
+            # CHUNKING (NEW SYSTEM)
+            # -----------------------------
+            try:
+                chunks = self.chunking_engine.chunk(nodes, language)
+            except Exception as e:
+                print(f"❌ Chunking failed for {file_path}: {e}")
+                continue
+
+            # -----------------------------
+            # ATTACH TAINT FINDINGS
+            # -----------------------------
+            for chunk in chunks:
+                chunk.taint_findings = taint_findings
+
+                parsed_chunks.append({
+                    "chunk_id": chunk.chunk_id,
+                    "file_path": chunk.file_path,
+                    "file_name": Path(chunk.file_path).name,
+                    "file_extension": Path(chunk.file_path).suffix,
+                    "chunk_type": chunk.chunk_type,
+                    "symbol": chunk.symbol,
+                    "content": chunk.content,
+                    "start_line": chunk.start_line,
+                    "end_line": chunk.end_line,
+                    "chunk_hash": chunk.chunk_id,
+                    "metadata": chunk.metadata,
+                    "nodes": chunk.nodes,
+                    "taint_findings": chunk.taint_findings,
+                })
 
         return parsed_chunks
 
@@ -123,61 +152,31 @@ class RepoScanner:
             taint_engine = TaintEngine()
             taint_findings = taint_engine.analyze(nodes)
 
-            for node in nodes:
-                chunk = self._node_to_chunk(node, str(file_path), taint_findings)
-                chunk["nodes"] = [node]   # same fix
-                parsed_chunks.append(chunk)
+            language = nodes[0].language if nodes else "generic"
+
+            try:
+                chunks = self.chunking_engine.chunk(nodes, language)
+            except Exception as e:
+                print(f"❌ Chunking failed: {file_path} → {e}")
+                continue
+
+            for chunk in chunks:
+                chunk.taint_findings = taint_findings
+
+                parsed_chunks.append({
+                    "chunk_id": chunk.chunk_id,
+                    "file_path": chunk.file_path,
+                    "file_name": Path(chunk.file_path).name,
+                    "file_extension": Path(chunk.file_path).suffix,
+                    "chunk_type": chunk.chunk_type,
+                    "symbol": chunk.symbol,
+                    "content": chunk.content,
+                    "start_line": chunk.start_line,
+                    "end_line": chunk.end_line,
+                    "chunk_hash": chunk.chunk_id,
+                    "metadata": chunk.metadata,
+                    "nodes": chunk.nodes,
+                    "taint_findings": chunk.taint_findings,
+                })
 
         return parsed_chunks
-
-    # ==============================
-    # NODE → CHUNK
-    # ==============================
-    def _node_to_chunk(self, node, file_path: str, taint_findings=None) -> dict:
-
-        # -----------------------------
-        # SAFE CONTENT EXTRACTION
-        # -----------------------------
-        content = (
-            getattr(node, "code", None)
-            or getattr(node, "text", None)
-            or getattr(node, "value", None)
-        )
-
-        if content is None:
-            content = ""
-
-        content = str(content)
-
-        # -----------------------------
-        # SAFE HASHING
-        # -----------------------------
-        chunk_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
-
-        return {
-            "repo_name": str(self.repo_path),
-            "file_path": file_path,
-            "file_name": Path(file_path).name,
-            "file_extension": Path(file_path).suffix,
-            "chunk_id": 0,
-            "chunk_hash": chunk_hash,
-            "commit_hash": None,
-            "parent_chunk_id": None,
-            "start_line": getattr(node, "start_line", None),
-            "end_line": getattr(node, "end_line", None),
-            "content": content,
-            "taint_findings": taint_findings or [],
-            "metadata": {
-                "language": getattr(node, "language", "unknown"),
-                "role": "source",
-                "parse_strategy": (
-                    "tree-sitter"
-                    if getattr(node, "language", "") != "python"
-                    else "ast"
-                ),
-                "service": None,
-            },
-            "modified": True,
-            "tags": [],
-            # 🔥 "nodes" will be added by the caller
-        }
