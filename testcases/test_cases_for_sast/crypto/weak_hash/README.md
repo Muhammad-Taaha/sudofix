@@ -1,0 +1,1 @@
+# Weak Hash Algorithms (MD5, SHA1)
