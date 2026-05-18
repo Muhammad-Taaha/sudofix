@@ -1,147 +1,229 @@
 import os
 import argparse
 import hashlib
+
 from cli_agent.cli_agent import CliAgent
 from controllers.data_base_controller import Postgres
 from controllers.reddis_controller import RedisManager
 from controllers.repo_scanner import RepoScanner
 
-def run_llm(repo_path: str, command: str):
-    print(f"\n🚀 Starting Repo-LLM pipeline | Mode: {command}")
+from sastscanner.taint.taint_engine import TaintEngine
+from sastscanner.core.rule_engine import RuleEngine
 
-    # Initialize Controllers
+
+# =========================================================
+# 🔥 DEBUG UTIL
+# =========================================================
+def debug(title, data=None):
+    print(f"\n🧪 [{title}]")
+    if data is not None:
+        print(data)
+
+
+def inspect_nodes(nodes):
+    if not isinstance(nodes, list):
+        print("⚠️ Nodes not list:", type(nodes))
+        return False
+
+    if len(nodes) == 0:
+        print("📄 EMPTY AST")
+        return False
+
+    print("📄 AST OK | nodes =", len(nodes))
+
+    from collections import Counter
+    print("🧪 Sample distribution:")
+    print(Counter(getattr(n, "node_type", "unknown") for n in nodes[:50]))
+
+    return True
+
+
+# =========================================================
+# 🚀 PIPELINE
+# =========================================================
+def run_llm(repo_path: str, command: str):
+
+    print("\n🚀 Starting Repo-LLM pipeline | Mode:", command)
+
     db = Postgres()
     cache = RedisManager()
 
-    # Established connections
-    db_conn = db.connect()  
+    db_conn = db.connect()
     redis_client = cache.connect()
 
     if not db_conn or not redis_client:
-        print("❌ Critical Failure: Could not connect to services.")
+        print("❌ DB/Redis connection failed")
         return
 
     try:
-        # 1. Sync the repository structure to Postgres
-        print("🔄 Syncing repository structure to Database...")
+        print("\n🔄 Syncing repo...")
         db.sync_repo_to_db(repo_path)
 
-        # 2. Get the local chunks from scanner
         scanner = RepoScanner(repo_path)
         all_chunks = scanner.local_scanner()
 
-        if not all_chunks:
-            print("❌ No chunks found or all files excluded.")
-            return
+        debug("PIPELINE", f"Total chunks = {len(all_chunks)}")
 
-        print(f"📂 Total chunks to evaluate: {len(all_chunks)}")
+        taint_engine = TaintEngine()
+        rule_engine = RuleEngine("sastscanner.rules")
+
         agent = CliAgent(repo_path, command)
 
-        # We need the repo_id for lookups
         repo_name = os.path.basename(repo_path)
         repo_data = db.save_repository(repo_name, repo_path)
-        repo_id = repo_data[0]['id']
+        repo_id = repo_data[0]["id"]
 
+        # =========================================================
+        # MAIN LOOP
+        # =========================================================
         for chunk in all_chunks:
-            content = chunk.get('content', '')
-            file_path = chunk.get('file_path')
-            file_name = os.path.basename(file_path if file_path else 'unknown')
-            chunk_hash = chunk.get('chunk_hash')  # Get hash from chunk, not metadata
+            # -----------------------------------------------------------------
+            # 🔥 FIX: ensure 'nodes' exists; if not, try to build from content
+            # -----------------------------------------------------------------
+            if "nodes" not in chunk:
+                # Fallback for old‑style chunks (e.g., from GenericChunker)
+                # Create a minimal node from the content
+                from parser.ast_nodes import UnifiedNode
+                chunk["nodes"] = [
+                    UnifiedNode(
+                        node_type="unknown",
+                        name=None,
+                        code=chunk.get("content", ""),
+                        file_path=chunk.get("file_path", "unknown"),
+                        start_line=chunk.get("start_line", 0),
+                        end_line=chunk.get("end_line", 0),
+                        language=chunk.get("metadata", {}).get("language", "unknown"),
+                    )
+                ]
 
-            # Generate unique hash for the Specific Content + Specific Task
-            content_hash = hashlib.sha256(
-                f"{command}:{content}".encode()).hexdigest()
-
-            # CHECK REDIS CACHE (Fast skip)
-            if redis_client.get(content_hash):
-                print(f"⏩ Skipping {file_name}: Already processed for {command}")
+            nodes = chunk.get("nodes", [])
+            if not nodes:
+                print("Empty AST (no nodes)")
                 continue
 
-            # USER INTERRUPT CHECK
-            print(f"\n--- Target: {file_name} ---")
-            user_input = input(f"Ready to {command}? [Enter to continue / 'q' to quit]: ")
-            if user_input.lower() == "q":
-                print("🛑 Shutdown requested by user.")
-                break
+            file_path = chunk.get("file_path", "unknown")
+            file_name = os.path.basename(file_path)
 
-            # 3. EXECUTE LLM COMMAND
-            result = ""
+            language = chunk.get("metadata", {}).get("language", "unknown")
+
+            print("\n" + "=" * 70)
+
+            debug("CHUNK", {
+                "file": file_name,
+                "language": language,
+                "content_len": len(chunk.get("content", "")),
+                "nodes": len(nodes)
+            })
+
+            print("🔥 CHUNK DEBUG:", len(nodes))
+            print(f"\n--- Processing {file_name} ---")
+
+            # =========================================================
+            # SKIP INVALID / EMPTY AST EARLY
+            # =========================================================
+            if not inspect_nodes(nodes):
+                print("⏭️ Skipping empty/invalid AST")
+                continue
+
+            # =========================================================
+            # TAINT ANALYSIS
+            # =========================================================
+            print("\n🧠 [TAINT DEBUG]")
             try:
-                if command == "review":
-                    result = agent.review_code(chunk)
-                elif command == "test":
-                    result = agent.generate_test(chunk)
-                elif command == "doc":
-                    result = agent.generate_documentation(chunk)
-                
-                if not result:
-                    print(f"⚠️ Warning: LLM returned empty result for {file_name}")
-                    continue
-                    
+                taint_findings = taint_engine.analyze(nodes, language=language)
+                taint_findings = taint_findings or []
             except Exception as e:
-                print(f"❌ LLM Error: {e}")
-                continue
+                print("❌ Taint error:", e)
+                taint_findings = []
 
-            # 4. SAVE TO POSTGRES
-            # Look up the ID based on the file path to find the 'file_root' entity
-           # 4. SAVE TO POSTGRES
-            # Use the absolute path if that's what's in the DB, or normalize it
-            normalized_path = str(file_path) 
-            file_record = db._get_file_by_path(repo_id, normalized_path)
-            
-            entity_id = None
-            if file_record:
-                # 🔍 DEBUG: print(f"Found file_id: {file_record['id']} for {file_name}")
-                sql = "SELECT id FROM code_entities WHERE file_id = %s AND type = 'file_root' LIMIT 1;"
-                ent_res = db._execute_query(sql, (file_record['id'],), fetch=True)
-                if ent_res:
-                    entity_id = ent_res[0]['id']
+            print("Taint findings:", len(taint_findings))
 
-            if entity_id:
-                db.save_ai_insight(
-                    entity_id=entity_id,
-                    insight_text=result,
-                    task_type=command,
-                    model="qwen-7b"
-                )
-                print(f"✅ Saved to Postgres for entity {entity_id}")
-                
-                # 5. UPDATE REDIS CACHE (Only if DB save succeeded)
-                redis_client.set(content_hash, "completed", ex=86400)
-                print(f"✅ Cache updated for {file_name}")
-            else:
-                # 🛠️ HELPER: If entity is missing, it's likely a sync issue
-                print(f"❌ Database Error: Could not find entity ID for {file_name}.")
-                print(f"   (Hint: Ensure 'code_entities' has a row for file_id {file_record['id'] if file_record else 'NOT FOUND'})")
-    except KeyboardInterrupt:
-        print("\n⚠️ Operation cancelled by user.")
+            # =========================================================
+            # RULE ENGINE
+            # =========================================================
+            print("\n🛡️ [RULE DEBUG]")
+            try:
+                rule_findings = rule_engine.scan(
+                    chunk,
+                    context={
+                        "language": language,
+                        "taint_findings": taint_findings,
+                        "taint_vars": getattr(taint_engine, "state", None),
+                    }
+                ) or []
+            except Exception as e:
+                print("❌ Rule engine error:", e)
+                rule_findings = []
+
+            print("Rule findings:", len(rule_findings))
+
+            # =========================================================
+            # SECURITY SUMMARY
+            # =========================================================
+            security_findings = (taint_findings or []) + (rule_findings or [])
+            print("\n🧪 SECURITY SUMMARY:", len(security_findings))
+
+            # =========================================================
+            # LLM STEP (ONLY IF MEANINGFUL DATA EXISTS)
+            # =========================================================
+            result = None
+
+            try:
+                if security_findings or len(nodes) > 5:
+                    if command == "review":
+                        result = agent.review_code(chunk)
+                    elif command == "test":
+                        result = agent.generate_test(chunk)
+                    elif command == "doc":
+                        result = agent.generate_documentation(chunk)
+            except Exception as e:
+                print("❌ LLM error:", e)
+
+            print("\n🤖 [LLM RESULT]")
+            print(bool(result))
+
+            if not result:
+                print("⚠️ Empty LLM output (skipped or no issues)")
+
+            # =========================================================
+            # CACHE ONLY VALID CHUNKS
+            # =========================================================
+            content = chunk.get("content", "")
+            if content:
+                content_hash = hashlib.sha256(
+                    f"{command}:{content}".encode()
+                ).hexdigest()
+
+                redis_client.set(content_hash, "done", ex=86400)
+
     except Exception as e:
-        print(f"❌ Unexpected Error: {e}")
+        print("❌ Pipeline crash:", e)
+
     finally:
-        print("\n🔻 Cleaning resources...")
-        # Note: Connections are managed inside controller methods, 
-        # but we close the initial check connections here.
-        if db_conn:
-            db_conn.close()
-            print("✅ Database connection closed")
-        if redis_client:
-            redis_client.close()
-            print("✅ Redis connection closed")
-        print("👋 Program exited safely")
+        print("\n🔻 Cleaning up...")
+        db_conn.close()
+        redis_client.close()
+        print("👋 Done")
 
+
+# =========================================================
+# CLI
+# =========================================================
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="AI Senior Engineer Agent")
-    parser.add_argument("path", nargs="?", default=".", help="Repo path")
 
-    subparsers = parser.add_subparsers(dest="command", required=True, help="Modes")
-    subparsers.add_parser("review", help="Review code architecture")
-    subparsers.add_parser("test", help="Generate unit tests")
-    subparsers.add_parser("doc", help="Generate documentation")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("path", nargs="?", default=".")
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    sub.add_parser("review")
+    sub.add_parser("test")
+    sub.add_parser("doc")
 
     args = parser.parse_args()
-    abs_path = os.path.abspath(args.path)
 
-    if not os.path.exists(abs_path):
-        print(f"❌ Error: {abs_path} not found.")
+    path = os.path.abspath(args.path)
+
+    if not os.path.exists(path):
+        print("❌ Path not found:", path)
     else:
-        run_llm(abs_path, args.command)
+        run_llm(path, args.command)

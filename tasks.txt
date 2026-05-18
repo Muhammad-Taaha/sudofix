@@ -1,0 +1,160 @@
+Phase 1: Parsing (Modular, Multi‑Language)
+Refactor parser/ into a modular structure
+
+Create parser/base_parser.py (abstract class).
+
+Create parser/python_parser.py, parser/java_parser.py, parser/javascript_parser.py, parser/c_parser.py, parser/cpp_parser.py, parser/go_parser.py, parser/rust_parser.py.
+
+Implement a parser/parser_factory.py that returns the correct parser based on file extension.
+
+Implement unified AST (common node types: FunctionNode, CallNode, ImportNode, ClassNode, etc.)
+
+Create parser/ast_nodes.py with dataclasses for each node type.
+
+Ensure each language parser converts its concrete tree into this unified AST.
+
+Integrate tree‑sitter for non‑Python languages
+
+Install tree-sitter and language bindings (tree-sitter-python, tree-sitter-java, …).
+
+Write wrappers in each *_parser.py to parse and unify.
+
+Unit tests for parsers
+
+Test each language parser on small code snippets.
+
+Verify unified AST output (correct node types, line numbers, code extraction).
+
+📋 Phase 2: SAST Engine (Rule‑based Detection)
+Create sastscanner/ folder (if not already) with the structure you generated.
+
+Implement ast_unifier.py – if not already done in parser/, create a separate module that consumes your unified AST.
+
+Implement base_rule.py – abstract rule class with get_metadata() and check(node, context).
+
+Write initial rule set (one file per rule):
+
+unsafe_eval.py
+
+command_injection.py
+
+sql_injection.py
+
+path_traversal.py
+
+hardcoded_secrets.py
+
+Implement rule_engine.py – loads rules, iterates over AST nodes, collects findings.
+
+Implement visitor.py – traverses unified AST and calls rule engine at each node.
+
+Implement context.py – tracks file path, language, taint data, import map during scan.
+
+Unit tests for SAST
+
+Create vulnerable code samples (one per rule).
+
+Assert that rule fires on the vulnerable code.
+
+Assert rule does NOT fire on safe code.
+
+📋 Phase 3: RAG + LLM Integration (Fix Generation)
+Ensure your VectorStore is using CodeBERT and cosine similarity (already improved).
+
+Build vector index from official CVEfixes database
+
+Write script to extract vulnerable‑fixed pairs (CVE ID, language, vulnerable_code, fixed_code).
+
+Embed vulnerable_code + description + CWE.
+
+Store metadata (fixed_code, CVE ID, language).
+
+Create rag_bridge.py (in sastscanner/integration/) that:
+
+Takes a finding (code snippet + language).
+
+Queries VectorStore for top‑k similar vulnerable‑fixed pairs.
+
+Builds prompt with original code + examples.
+
+Calls ollama_client to generate fix.
+
+Returns fix suggestion.
+
+Add fallback logic – if no similar example found, still ask LLM to suggest a fix (with warning).
+
+Create pipeline.py (project root) that ties everything together:
+
+RepoScanner (walks repo) → ParserManager (unified AST) → RuleEngine (SAST findings) → RagBridge (fix generation) → output JSON/diff.
+
+Unit tests for RAG retrieval
+
+Test that VectorStore.query() returns relevant pairs for known vulnerabilities.
+
+📋 Phase 4: Output & Developer Experience
+Implement report formatter (JSON, SARIF, human readable) in findings/report_formatter.py.
+
+Implement unified diff generator – given original code snippet and LLM‑suggested fix, produce a Git‑compatible patch.
+
+Create CLI entry point (cli/main.py) with subcommands:
+
+scan – run full pipeline on a repo.
+
+explain – analyse a single code snippet.
+
+update-db – refresh CVEfixes index.
+
+Add config file support (config/settings.yaml) for rule severity thresholds, enabled rules, excluded paths.
+
+Add progress bars and logging (utils/logger.py, tqdm for long scans).
+
+📋 Phase 5: Testing & Validation
+Create a test suite (tests/ folder) with:
+
+Unit tests for each parser.
+
+Unit tests for each SAST rule.
+
+Integration test (end‑to‑end on a small vulnerable repo).
+
+Regression tests (ensure fixed vulnerabilities are not flagged).
+
+Benchmark retrieval accuracy – use held‑out CVEs from CVEfixes to compute recall@k.
+
+Test on real open‑source repos (e.g., intentionally vulnerable apps like DVWA, WebGoat, VulnerableFlaskApp).
+
+Measure false positive rate – scan known safe codebases and manually review findings.
+
+📋 Phase 6: CI/CD & Deployment
+Dockerize the entire pipeline – Dockerfile with system dependencies, Python packages, and pre‑built vector index.
+
+Create GitHub Action – runs repo-llm scan on pull requests and comments findings + suggested fixes.
+
+Add a pre‑commit hook – developers can run scan locally before pushing.
+
+Write comprehensive documentation (README.md, CONTRIBUTING.md, docs/ folder):
+
+Installation guide.
+
+How to write custom rules.
+
+How to add a new language parser.
+
+Example usage.
+
+Publish to PyPI (optional) – pip install repo-llm.
+
+📋 Phase 7: Continuous Improvement
+Collect feedback loop – allow users to mark fixes as correct/incorrect to fine‑tune prompts.
+
+Add taint tracking – advanced SAST (dataflow analysis) to reduce false positives.
+
+Integrate SCA (software composition analysis) – scan dependencies for known vulnerabilities (your sca/ folder).
+
+Periodically refresh CVEfixes index – cron job to download latest database and rebuild vectors.
+
+✅ Immediate First Step (for today)
+Refactor your parser/ to be modular – start with python_parser.py (you already have the logic in repo_parser.py, just extract it). Then move to java_parser.py, etc.
+
+Once parsing is modular, everything else (SAST rules, RAG integration) becomes much easier. Good luck – you have a solid plan now!
+

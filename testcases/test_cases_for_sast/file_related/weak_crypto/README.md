@@ -1,0 +1,1 @@
+# Weak Cryptographic Hash (MD5/SHA1)
