@@ -17,6 +17,9 @@ class TaintState:
             "sanitizers": [],
         }
 
+    def untaint_var(self, var: str):
+        self.tainted_vars.pop(var, None)
+
     # =========================
     # SANITIZE
     # =========================

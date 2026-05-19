@@ -141,3 +141,11 @@ class TaintVisitor:
                 else:
                     for name in re.findall(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", str(target)):
                         self.state.taint_var(name)
+        else:
+            # If the RHS is completely safe, untaint the targets (Fixing Re-assignment Bug)
+            for target in targets:
+                if isinstance(target, str):
+                    self.state.untaint_var(target)
+                else:
+                    for name in re.findall(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", str(target)):
+                        self.state.untaint_var(name)
