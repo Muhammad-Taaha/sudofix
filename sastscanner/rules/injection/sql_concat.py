@@ -39,7 +39,16 @@ class SqlConcatRule(BaseRule):
                     if arguments:
                         # First argument is the SQL query
                         query_arg = arguments[0]
-                        if not is_constant_literal(query_arg):
+                        taint_vars = context.get("taint_vars")
+                        if taint_vars:
+                            is_tainted = False
+                            for var in re.findall(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", str(query_arg)):
+                                if taint_vars.is_tainted(var):
+                                    is_tainted = True
+                                    break
+                            if is_tainted:
+                                findings.append(self._make_finding(chunk, ast_node, callee))
+                        elif not is_constant_literal(query_arg):
                             findings.append(self._make_finding(chunk, ast_node, callee))
 
         # Fallback regex for other languages

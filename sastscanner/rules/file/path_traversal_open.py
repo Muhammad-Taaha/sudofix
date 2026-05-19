@@ -44,8 +44,17 @@ class PathTraversalOpenRule(BaseRule):
             args = getattr(node, "arguments", [])
             if args:
                 path_arg = args[0]
-                # If argument is not a constant literal, it's likely user-controlled
-                if not is_constant_literal(path_arg):
+                taint_vars = context.get("taint_vars")
+                if taint_vars:
+                    import re
+                    is_tainted = False
+                    for var in re.findall(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", str(path_arg)):
+                        if taint_vars.is_tainted(var):
+                            is_tainted = True
+                            break
+                    if is_tainted:
+                        findings.append(self._create_finding(chunk, node, callee, path_arg))
+                elif not is_constant_literal(path_arg):
                     findings.append(self._create_finding(chunk, node, callee, path_arg))
             else:
                 # No arguments? Still potentially dangerous

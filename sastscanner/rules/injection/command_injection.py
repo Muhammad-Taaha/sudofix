@@ -67,27 +67,44 @@ class CommandInjectionRule(BaseRule):
             return []
         nodes = chunk.get("nodes", [])
         findings = []
+        taint_vars = context.get("taint_vars")
+
         for ast_node in nodes:
             if not isinstance(ast_node, CallNode):
                 continue
             base = self._get_base_name(ast_node.callee)
             if base not in self._sink_cache[lang]:
                 continue
-            # Heuristic: check if any argument is not a literal
-            code = ast_node.code
-            match = re.search(r'\((.*)\)', code, re.DOTALL)
-            if match:
-                args_str = match.group(1).strip()
-                if args_str:
-                    parts = [p.strip() for p in args_str.split(',') if p.strip()]
-                    for part in parts:
-                        if not (part.startswith(('"', "'")) and part.endswith(('"', "'"))):
-                            findings.append(self._create_finding(chunk, ast_node, ast_node.callee))
+
+            # Check taint tracking data if available
+            if taint_vars:
+                arguments = getattr(ast_node, "arguments", [])
+                is_arg_tainted = False
+                for arg in arguments:
+                    for var in re.findall(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", str(arg)):
+                        if taint_vars.is_tainted(var):
+                            is_arg_tainted = True
                             break
-                else:
+                    if is_arg_tainted:
+                        break
+                if is_arg_tainted:
                     findings.append(self._create_finding(chunk, ast_node, ast_node.callee))
             else:
-                findings.append(self._create_finding(chunk, ast_node, ast_node.callee))
+                # Heuristic fallback: check if any argument is not a literal
+                code = ast_node.code
+                match = re.search(r'\((.*)\)', code, re.DOTALL)
+                if match:
+                    args_str = match.group(1).strip()
+                    if args_str:
+                        parts = [p.strip() for p in args_str.split(',') if p.strip()]
+                        for part in parts:
+                            if not (part.startswith(('"', "'")) and part.endswith(('"', "'"))):
+                                findings.append(self._create_finding(chunk, ast_node, ast_node.callee))
+                                break
+                    else:
+                        findings.append(self._create_finding(chunk, ast_node, ast_node.callee))
+                else:
+                    findings.append(self._create_finding(chunk, ast_node, ast_node.callee))
         return findings
 
     def _create_finding(self, chunk, ast_node, callee):
