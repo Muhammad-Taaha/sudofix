@@ -1,0 +1,17 @@
+# Backup file for command injection rule
+from typing import List, Dict, Any
+from .base_rule import BaseRule
+from ..findings.finding import Finding
+
+class CommandInjectionBakRule(BaseRule):
+    @property
+    def name(self) -> str:
+        return "Command Injection Backup"
+
+    @property
+    def severity(self) -> str:
+        return "HIGH"
+
+    def check(self, chunk: Dict[str, Any], context: Dict[str, Any]) -> List[Finding]:
+        # Implementation is deferred to the main rule: rules/injection/command_injection.py
+        return []

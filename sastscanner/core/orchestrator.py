@@ -8,14 +8,14 @@ from parser.ast_nodes import UnifiedNode
 from parser.parser_factory import ParserFactory
 
 from ..findings.finding import Finding
-from .rule_runner import RuleRunner
+from .rule_engine import RuleEngine
 
 
 class Orchestrator:
     def __init__(self, repo_path: str):
         self.repo_path = Path(repo_path)
         self.parser_factory = ParserFactory()
-        self.rule_runner = RuleRunner()
+        self.rule_engine = RuleEngine()
 
     def scan_file(self, file_path: str) -> List[Finding]:
         """Parse a single file and run rules on every AST node (depth-first)."""
@@ -44,7 +44,7 @@ class Orchestrator:
         }
         for node in traversal_nodes:
             chunk_dict = self._node_to_dict(node, file_path)
-            node_findings = self.rule_runner.run(chunk_dict, context)
+            node_findings = self.rule_engine.scan(chunk_dict, context)
             findings.extend(node_findings)
         return findings
 
@@ -70,6 +70,7 @@ class Orchestrator:
         """Convert UnifiedNode to the chunk dict format expected by rules."""
         return {
             "ast_node": node,
+            "nodes": [node],
             "content": node.code,
             "file_path": file_path,
             "file_name": Path(file_path).name,
