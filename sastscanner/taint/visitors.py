@@ -2,10 +2,11 @@ import re
 
 
 class TaintVisitor:
-    def __init__(self, state, rules, language: str):
+    def __init__(self, state, rules, language: str, nodes: list = None):
         self.state = state
         self.rules = rules
         self.language = language
+        self.nodes = nodes or []
 
     def visit(self, node):
         node_type = getattr(node, "node_type", None)
@@ -15,6 +16,9 @@ class TaintVisitor:
 
         elif node_type == "assignment":
             self.visit_AssignNode(node)
+
+        elif node_type == "return":
+            self.visit_ReturnNode(node)
 
     # =========================
     # CALL NODE
@@ -149,3 +153,38 @@ class TaintVisitor:
                 else:
                     for name in re.findall(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", str(target)):
                         self.state.untaint_var(name)
+
+    # =========================
+    # RETURN NODE (RETURN TAINT PROPAGATION)
+    # =========================
+    def visit_ReturnNode(self, node):
+        value = getattr(node, "value", "")
+        if not value:
+            return
+
+        is_tainted_return = False
+        if self.rules.is_source(value, self.language):
+            is_tainted_return = True
+        else:
+            for var in re.findall(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", value):
+                if self.state.is_tainted(var):
+                    is_tainted_return = True
+                    break
+
+        if is_tainted_return:
+            func_name = self._get_enclosing_function_name(node.start_line)
+            if func_name:
+                # Dynamically register the local function as a taint source!
+                pattern = rf"\b{re.escape(func_name)}\s*\("
+                if self.language in self.rules.sources:
+                    if pattern not in self.rules.sources[self.language]:
+                        self.rules.sources[self.language].append(pattern)
+
+    def _get_enclosing_function_name(self, line: int) -> str:
+        for node in getattr(self, "nodes", []):
+            if getattr(node, "node_type", None) == "function":
+                start = getattr(node, "start_line", 0)
+                end = getattr(node, "end_line", 0)
+                if start <= line <= end:
+                    return getattr(node, "name", "")
+        return ""

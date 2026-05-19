@@ -12,7 +12,7 @@ class TaintEngine:
 
     def analyze(self, nodes: List, language: str = "generic") -> List:
         lang = language if language != "generic" else self.language
-        visitor = TaintVisitor(self.state, self.rules, lang)
+        visitor = TaintVisitor(self.state, self.rules, lang, nodes)
         self.state.reset()
 
         for node in nodes:
