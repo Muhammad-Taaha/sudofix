@@ -2,7 +2,7 @@
 # importing all the chunkers for the use
 # refactored  only one class the ast_chunker
 from parser.chunking.strategies.ast_semantic import ASTSemanticChunker
-from parser.chunking.strategies.generic_chunker import GenericChunker
+from parser.chunking.strategies.generic_chunking import GenericChunker
 
 
 class ChunkerRegistry:

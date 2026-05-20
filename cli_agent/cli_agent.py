@@ -1,5 +1,6 @@
 import hashlib
 import traceback
+import os
 from typing import Optional, List, Dict, Any
 
 from controllers.reddis_controller import RedisManager
@@ -19,20 +20,23 @@ class CliAgent:
         self.dry_run = dry_run
 
         # Core components
-        self.vector_store = VectorStore()              # upgraded with metadata filtering
+        self.vector_store = VectorStore()
         self.llm = OllamaClient()
         self.redis_manager = RedisManager()
         self.redis_client = self.redis_manager.connect()
         self.git_controller = Checker(command)
         self.data_base = Postgres()
-        self.sast_engine = RuleEngine()                # loads all rules automatically
+        self.sast_engine = RuleEngine()
+
+        # Ensure fixes directory exists
+        os.makedirs("fixes", exist_ok=True)
 
     # ----------------------------------------------------------------------
     # Helper: map a finding (rule name / message) to a vulnerability pattern
     # ----------------------------------------------------------------------
     def _infer_pattern_from_finding(self, finding: Finding) -> Optional[str]:
         """Convert a SAST finding into one of the known pattern names."""
-        rule_text = (finding.rule_id + " " + finding.message).lower()
+        rule_text = (finding.rule_name + " " + finding.message).lower()
         if any(k in rule_text for k in ["sql", "database", "query", "injection"]):
             return "sql_injection"
         if any(k in rule_text for k in ["command", "exec", "shell", "os", "system"]):
@@ -53,7 +57,7 @@ class CliAgent:
             return "business_logic"
         if any(k in rule_text for k in ["config", "misconfiguration"]):
             return "config"
-        return None   # unknown pattern – will use language‑only filter
+        return None
 
     # ----------------------------------------------------------------------
     # Core processing logic (caching, SAST, RAG, LLM)
@@ -97,8 +101,8 @@ class CliAgent:
                 return None
             else:
                 print(f"🔍 SAST found {len(findings)} potential issue(s) in {file_name}")
-                # Infer pattern from the first finding (most relevant)
                 pattern = self._infer_pattern_from_finding(findings[0])
+                print(f"   🔎 Inferred pattern: {pattern}")
 
         # --- RAG retrieval (only if we have findings and a language) ---
         examples: List[Dict] = []
@@ -108,35 +112,58 @@ class CliAgent:
                 query_text=content,
                 top_k=3,
                 language=detected_lang,
-                pattern=pattern   # may be None → language‑only filter
+                pattern=pattern
             )
             if similar:
                 examples = similar
                 print(f"✅ Retrieved {len(similar)} relevant examples")
+                # Debug: print first example summary
+                for idx, ex in enumerate(examples[:2]):
+                    print(f"   Example {idx+1}: pattern={ex['pattern']}, language={ex['language']}, file={ex['file']}")
+                    print(f"      Fixed code preview: {ex['fixed_code'][:150]}...")
             else:
                 print(f"⚠️ No similar examples for {detected_lang}" + (f" with pattern {pattern}" if pattern else ""))
 
         # --- Build the prompt with SAST findings and RAG examples ---
-        prompt = f"{task_prompt}\n\nLanguage: {detected_lang.upper()}\n"
+        # Improved prompt to reduce hallucinations
+        prompt = f"""{task_prompt}
+
+Language: {detected_lang.upper()}
+
+Static analysis detected the following issues:
+"""
         if findings:
-            sast_summary = "\n".join([
-                f"- {f.message} (lines {f.line_start}-{f.line_end}, severity: {f.severity})"
-                for f in findings
-            ])
-            prompt += f"\nStatic analysis detected the following issues:\n{sast_summary}\n"
+            for f in findings:
+                prompt += f"- {f.message} (lines {f.line_start}-{f.line_end}, severity: {f.severity})\n"
+        else:
+            prompt += "None.\n"
 
         if examples:
-            prompt += "\nHere are examples of similar vulnerabilities and their fixes:\n"
+            prompt += "\nHere are REAL examples of similar vulnerabilities and their CORRECT fixes:\n"
             for i, ex in enumerate(examples):
                 prompt += f"\nExample {i+1} (pattern: {ex['pattern']}, language: {ex['language']}):\n"
                 prompt += f"Fixed code:\n```{detected_lang}\n{ex['fixed_code']}\n```\n"
-            prompt += "\nBased on these examples, suggest a concrete fix for the vulnerabilities found.\n"
+            prompt += """
+IMPORTANT INSTRUCTIONS:
+- Do NOT invent new libraries, packages, or functions that do not exist in the examples or original code.
+- If you need to store secrets (API keys, passwords), use environment variables (e.g., os.getenv in Python, os.LookupEnv in Go).
+- Do NOT print or expose secrets in logs or HTTP responses.
+- Provide a complete, working fix that would compile/run without errors.
+- If the original code uses a framework (Flask, Django, net/http), follow its patterns.
 
-        prompt += f"\nNow analyze this code:\n```{detected_lang}\n{content}\n```"
+Based on these examples and instructions, suggest a concrete, compilable fix for the vulnerabilities found.
+"""
+        else:
+            prompt += """
+No similar examples were found. Provide a best‑practice fix using standard libraries only. Do not invent new packages.
+"""
+
+        prompt += f"\nNow analyze this code and provide a fixed version:\n```{detected_lang}\n{content}\n```"
 
         print(f"📡 SENDING TO OLLAMA: {file_name} [{detected_lang}] ...")
         try:
             response = self.llm.generate(prompt)
+            print(f"\n📝 LLM RESPONSE for {file_name}:\n{response}\n{'-'*50}\n")
             if not response:
                 print(f"⚠️ LLM returned empty for {file_name}")
                 return None
@@ -144,6 +171,20 @@ class CliAgent:
             print(f"✅ LLM SUCCESS: Generated response for {file_name}")
             self._cache_response(cache_key, response)
             self._update_vector_store(chunk_dict, response)
+
+            # --- Save response to markdown file for review ---
+            output_file = "llm_fixes.md"
+            with open(output_file, "a") as f:
+                f.write(f"## {file_name}\n\n")
+                f.write(f"**Language:** {detected_lang.upper()}\n\n")
+                f.write("**Issues detected:**\n")
+                for fnd in findings:
+                    f.write(f"- {fnd.message} (lines {fnd.line_start}-{fnd.line_end}, severity: {fnd.severity})\n")
+                if pattern:
+                    f.write(f"\n**Inferred pattern:** `{pattern}`\n")
+                f.write(f"\n**Suggested Fix:**\n{response}\n\n---\n\n")
+            print(f"📁 Appended response to {output_file}")
+
             return response
         except Exception as e:
             traceback.print_exc()
@@ -181,16 +222,12 @@ class CliAgent:
         self.redis_manager.save_to_reddis(cache_key, response.strip())
 
     def _update_vector_store(self, chunk_dict: Dict[str, Any], response: str) -> None:
-        """Optional: add newly processed chunk + LLM insight to vector store."""
         try:
             enriched_metadata = {
                 **chunk_dict,
                 "llm_insight": response
             }
             print(f"📦 Indexing {chunk_dict.get('file_name')} into vector store")
-            # The new VectorStore may not support dynamic addition; we keep this
-            # as a no‑op or log. If you want to add new data, extend VectorStore.
-            # For now, just log.
             print("ℹ️ Dynamic addition to vector store is disabled (static dataset).")
         except Exception as e:
             print(f"❌ Error while updating vector store: {e}")

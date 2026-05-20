@@ -4,8 +4,9 @@ from pathlib import Path
 from parser.file_walker import RepoWalker
 from parser.detectors import FileDetector
 from parser.parser_factory import ParserFactory
-from parser.chunking.engine import ChunkingEngine   # ✅ NEW CHUNK SYSTEM
+from parser.chunking.engine import ChunkingEngine
 
+from parser.ast_nodes import ModuleNode
 from sastscanner.taint.taint_engine import TaintEngine
 
 
@@ -16,7 +17,7 @@ class RepoScanner:
         self.walker = RepoWalker(self.repo_path)
         self.detector = FileDetector(repo_path)
 
-        # ✅ CENTRALIZED CHUNKING ENGINE
+        # single shared engine
         self.chunking_engine = ChunkingEngine()
 
     # ==============================
@@ -43,9 +44,6 @@ class RepoScanner:
         for file_path in files:
             full_path = self.repo_path / file_path
 
-            # -----------------------------
-            # SKIP INVALID FILES
-            # -----------------------------
             if not full_path.exists() or full_path.is_dir():
                 continue
 
@@ -60,9 +58,9 @@ class RepoScanner:
 
             print(f"\n🧪 Parsing: {file_path}")
 
-            # -----------------------------
-            # PARSE → AST NODES
-            # -----------------------------
+            # ==============================
+            # PARSE FILE → LIST OF NODES
+            # ==============================
             parser = ParserFactory.get_parser(str(full_path))
             if not parser:
                 continue
@@ -79,29 +77,41 @@ class RepoScanner:
                 print("📄 EMPTY AST → skipping")
                 continue
 
-            # -----------------------------
-            # TAINT ANALYSIS (on AST)
-            # -----------------------------
+            # ==============================
+            # TAINT ANALYSIS
+            # ==============================
             taint_engine = TaintEngine()
             taint_findings = taint_engine.analyze(nodes)
 
-            # -----------------------------
-            # DETECT LANGUAGE
-            # -----------------------------
             language = nodes[0].language if nodes else "generic"
 
-            # -----------------------------
-            # CHUNKING (NEW SYSTEM)
-            # -----------------------------
+            # ==============================
+            # BUILD ROOT NODE (IMPORTANT FIX)
+            # ==============================
+            root = ModuleNode(
+                name=str(file_path),
+                code="",
+                file_path=str(full_path),
+                start_line=0,
+                end_line=0,
+                language=language,
+            )
+
+            for node in nodes:
+                root.add_child(node)
+
+            # ==============================
+            # CHUNKING (NOW CORRECT)
+            # ==============================
             try:
-                chunks = self.chunking_engine.chunk(nodes, language)
+                chunks = self.chunking_engine.chunk(root, language)
             except Exception as e:
                 print(f"❌ Chunking failed for {file_path}: {e}")
                 continue
 
-            # -----------------------------
-            # ATTACH TAINT FINDINGS
-            # -----------------------------
+            # ==============================
+            # ATTACH TAINT + FORMAT OUTPUT
+            # ==============================
             for chunk in chunks:
                 chunk.taint_findings = taint_findings
 
@@ -124,7 +134,7 @@ class RepoScanner:
         return parsed_chunks
 
     # ==============================
-    # GITHUB WEBHOOK SCANNER
+    # GITHUB SCANNER
     # ==============================
     def github_webhook_scanner(self, changed_files: List[str]):
         parsed_chunks = []
@@ -154,8 +164,28 @@ class RepoScanner:
 
             language = nodes[0].language if nodes else "generic"
 
+            # ==============================
+            # BUILD ROOT NODE (FIXED HERE TOO)
+            # ==============================
+            root = ModuleNode(
+                name=str(file_path),
+                code="",
+                file_path=str(file_path),
+                start_line=0,
+                end_line=0,
+                language=language,
+            )
+
+            for node in nodes:
+                root.add_child(node)
+
+            # ==============================
+            # CHUNKING
+            # ==============================
             try:
-                chunks = self.chunking_engine.chunk(nodes, language)
+                chunks = self.chunking_engine.chunk(root, language)
+                print(f"for the debug of the chunks {chunks}")
+                print("[DEBUG] root type in controller:", type(root))
             except Exception as e:
                 print(f"❌ Chunking failed: {file_path} → {e}")
                 continue

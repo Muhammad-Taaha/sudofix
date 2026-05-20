@@ -4,7 +4,7 @@ import time
 
 
 class OllamaClient:
-    def __init__(self, model="qwen2.5-coder:7b", host="http://localhost:11434"):
+    def __init__(self, model="qwen2.5-coder:1.5b", host="http://localhost:11434"):
         self.model = model
         self.url = f"{host}/api/generate"
         self.timeout = 3000  # seconds

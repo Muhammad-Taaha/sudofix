@@ -1,9 +1,14 @@
-from abc import ABC, abstractclassmethod
+from abc import ABC, abstractmethod
+from typing import List
+from parser.ast_nodes import UnifiedNode
+from parser.chunking.models import Chunk
 
-from typing import List, Dict
 
+class BaseChunkStrategy(ABC):
 
-class BaseChunkStategy(ABC):
-    @abstractclassmethod
-    def chunk(self, content: str, file_path: str, meta_data: Dict) -> List(Dict):
+    @abstractmethod
+    def chunk(self, nodes: List[UnifiedNode], file_path: str) -> List[Chunk]:
+        """
+        Convert AST nodes into semantic chunks
+        """
         pass
