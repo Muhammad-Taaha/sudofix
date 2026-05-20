@@ -1,80 +1,101 @@
-# Repo-LLM Integration
+# Sudofix Integration
 
 **AI-powered security analysis for code repositories** – combining SAST, SCA, RAG, and LLMs.
 
+---
+
 ## Overview
 
-Repo-LLM is a unified pipeline that analyzes source code repositories for security vulnerabilities, dependency risks, and generates intelligent reports using large language models. It integrates:
+Sudofix is a unified pipeline that analyzes source code repositories for security vulnerabilities, dependency risks, and generates intelligent reports using large language models.
 
-- **SAST** (Static Application Security Testing) – taint analysis + rule‑based scanning  
-- **SCA** (Software Composition Analysis) – dependency vulnerability scanning (pure‑Python wrapper using `npm audit`, `pip‑audit`, `osv‑scanner`)  
-- **RAG** (Retrieval-Augmented Generation) – fetch relevant vulnerability fixes from a vector database  
-- **LLM** – generate reviews, tests, or documentation using local models (e.g., Ollama)
+It integrates:
+
+- **SAST (Static Application Security Testing)** – taint analysis + rule-based scanning  
+- **SCA (Software Composition Analysis)** – dependency vulnerability scanning using `pip-audit`, `npm audit`, and `osv-scanner`  
+- **RAG (Retrieval-Augmented Generation)** – fetch relevant vulnerability fixes from a vector database  
+- **LLM** – generate reviews, tests, and documentation using local models (e.g., Ollama)
+
+---
 
 ## Features
 
-- ✅ Parse multiple languages (Python, JavaScript, Java, Go, Rust, C/C++) via Tree‑sitter  
+- ✅ Multi-language parsing (Python, JavaScript, Java, Go, Rust, C/C++) via Tree-sitter  
 - ✅ Taint tracking across functions and files  
-- ✅ Custom rule engine for security patterns  
+- ✅ Custom rule engine for detecting vulnerabilities  
 - ✅ Dependency scanning (NPM, PyPI, Rust, Go, Java, C/C++)  
-- ✅ LLM‑powered code review, test generation, and documentation  
-- ✅ Redis caching and PostgreSQL persistence  
-- ✅ Interactive / CLI mode selection (SAST only / SCA only / full pipeline)  
-- ✅ Monorepo support – scans all sub‑projects
+- ✅ LLM-powered:
+  - Code review  
+  - Test generation  
+  - Documentation generation  
+- ✅ Redis caching for performance  
+- ✅ PostgreSQL persistence  
+- ✅ CLI + interactive mode  
+- ✅ Monorepo support  
+
+---
 
 ## Architecture
-```
+
+
 User Input (repo path, command, mode)
-                │
-                ▼
+│
+▼
 ┌─────────────────────────────────────────┐
-│   main.py │
+│ main.py │
 │ - Parse arguments │
 │ - Interactive mode selection │
 │ - Dispatch to SAST / SCA / Full │
-└────────────┬────────────────┬────────────┘
+└────────────┬────────────────┬───────────┘
 │ │
-┌────────▼────────┐ ┌────▼───────────┐
+┌───────▼───────┐ ┌─────▼──────────┐
 │ SAST pipeline │ │ SCA pipeline │
 │ (taint+rules) │ │ (scan_deps) │
-└────────┬────────┘ └────┬───────────┘
+└───────┬───────┘ └─────┬──────────┘
 │ │
 └────────┬───────┘
 ▼
-┌───────────────┐
+┌────────────────┐
 │ RAG + LLM │
 │ (CliAgent) │
-└───────────────┘
-```
-text
+└────────────────┘
 
-### Directory Structure
+
+---
+
+## Directory Structure
+
+
 repo-llm/
-├── main.py # Entry point (pipeline orchestrator)
+├── main.py # Entry point
 ├── cli_agent/ # LLM interaction (Ollama)
-├── controllers/ # DB (Postgres) + Redis + repo scanner
-├── sastscanner/ # Taint engine + rule engine
-├── parser/ # Tree‑sitter based AST parsers
-├── rag/ # Vector store + retriever (vulnerability fixes)
-├── sca/ # SCA module
-│ └── sca_simple.py # Pure‑Python multi‑ecosystem scanner
+├── controllers/ # DB + Redis + repo scanner
+├── sastscanner/ # Taint + rule engine
+├── parser/ # Tree-sitter parsers
+├── rag/ # Vector retrieval
+├── sca/ # Dependency scanner
+│ └── sca_simple.py
 ├── vector_store/ # ChromaDB / embeddings
-├── dataset/ # Vulnerability dataset (CVE fixes)
+├── dataset/ # CVE fixes dataset
 ├── requirements.txt
 └── README.md
 
-text
+
+---
 
 ## Prerequisites
 
-- **Python 3.10+**
-- **PostgreSQL** (for storing repo metadata)
-- **Redis** (for caching processed chunks)
-- **Ollama** (or any OpenAI‑compatible LLM) for the `cli_agent`
-- Optional but recommended for SCA:
-  - `pip-audit` (Python)
-  - `npm` (Node.js) – only if you scan JS projects
-  - `osv-scanner` (multi‑language fallback) – one binary for all
+- Python 3.10+
+- PostgreSQL
+- Redis
+- Ollama (or OpenAI-compatible LLM)
+
+Optional tools for SCA:
+
+- `pip-audit`
+- `npm`
+- `osv-scanner`
+
+---
 
 ## Installation
 
@@ -84,151 +105,131 @@ text
 git clone https://github.com/your-org/repo-llm.git
 cd repo-llm
 2. Set up Python environment
-bash
 python -m venv venv
-source venv/bin/activate   # or `venv\Scripts\activate` on Windows
+source venv/bin/activate     # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-3. Install optional SCA tools (for dependency scanning)
-bash
-# Python dependencies scanner
+3. Install SCA tools
 pip install pip-audit
 
-# Node.js (if you scan npm projects)
-sudo apt install npm   # or use your package manager
+sudo apt install npm
 
-# Universal scanner (OSV)
 wget https://github.com/google/osv-scanner/releases/download/v1.9.2/osv-scanner_linux_amd64
 chmod +x osv-scanner_linux_amd64
 sudo mv osv-scanner_linux_amd64 /usr/local/bin/osv-scanner
-4. Set up databases
-PostgreSQL: create a database and user, then update controllers/data_base_controller.py with connection details.
+4. Setup Databases
 
-Redis: ensure Redis is running (default localhost:6379).
+PostgreSQL → create DB and update config in:
 
-Vector store: the rag/ module expects a pre‑built ChromaDB or embeddings. You can populate it using making_vector_db.py.
+controllers/data_base_controller.py
 
-5. Configure LLM
-Edit cli_agent/cli_agent.py to point to your Ollama endpoint (default http://localhost:11434). Make sure the model (e.g., llama3.2) is pulled:
+Redis:
 
-bash
+redis-server
+
+Vector DB:
+
+python making_vector_db.py
+Configure LLM (Ollama)
 ollama pull llama3.2
+
+Edit:
+
+# cli_agent/cli_agent.py
+self.model = "llama3.2"
+self.api_url = "http://localhost:11434/api/generate"
 Usage
-Run the pipeline on a local repository:
-
-bash
+Run pipeline
 python main.py /path/to/repo review
-You will be prompted to choose a mode:
-
-text
-🔍 What would you like to run?
-  1) SAST only (code analysis + LLM)
-  2) SCA only (dependency scanning)
-  3) Full pipeline (both)
-Alternatively, use command‑line flags:
-
-bash
-python main.py /path/to/repo review --mode sast   # SAST only
-python main.py /path/to/repo review --mode sca    # SCA only
-python main.py /path/to/repo review --mode full   # full pipeline
+Select mode
+1) SAST only
+2) SCA only
+3) Full pipeline
+CLI mode
+python main.py /path/to/repo review --mode sast
+python main.py /path/to/repo review --mode sca
+python main.py /path/to/repo review --mode full
 Commands
-review – perform security analysis and generate a natural language report.
-
-test – generate unit tests for the code chunks (LLM).
-
-doc – generate documentation comments.
-
+Command	Description
+review	Security analysis + report
+test	Generate unit tests
+doc	Generate documentation
 How It Works
 SAST Pipeline
-Repo Scanner – walks the directory and splits code into chunks (functions, classes, etc.) using language‑specific parsers.
-
-Taint Engine – tracks data flow from sources (user input) to sinks (dangerous functions).
-
-Rule Engine – applies custom YAML/JSON rules to detect patterns (e.g., hardcoded secrets, SQL injection).
-
-LLM Review – sends the chunk + findings + optional SCA context to the LLM for final analysis.
-
+Repo Scanner → splits code into chunks
+Taint Engine → tracks data flow
+Rule Engine → applies vulnerability rules
+LLM → final analysis
 SCA Pipeline
-Detects lockfiles/manifests (package.json, requirements.txt, Cargo.lock, go.mod, pom.xml, etc.).
-
-Calls ecosystem‑specific tools (npm audit, pip-audit, cargo audit, govulncheck) or falls back to osv-scanner.
-
-Returns a list of vulnerable dependencies (package, version, CVE, severity).
-
-Generates a sca_report.md file and, in full mode, passes the context to the LLM.
-
+Detects dependency files:
+package.json, requirements.txt, Cargo.lock, etc.
+Runs:
+npm audit
+pip-audit
+osv-scanner
+Outputs:
+Vulnerability list
+sca_report.md
 RAG Integration
-The rag/ module retrieves similar vulnerability fixes from a pre‑computed vector database (based on the CVEfixes dataset).
-
-Retrieved patches are fed to the LLM to suggest concrete code fixes.
-
+Retrieves similar vulnerability fixes from vector DB
+Uses CVE dataset
+Feeds fixes into LLM for better suggestions
 Configuration
-Rules for SAST
-Add custom rules in sastscanner/rules/ (JSON or YAML). Each rule defines:
+SAST Rules
 
-id, severity, message
+Example:
 
-pattern (AST query) or taint configuration
-
-Example rule (Python hardcoded password):
-
-json
 {
   "id": "PY001",
   "severity": "HIGH",
   "message": "Hardcoded password detected",
   "pattern": "(password|passwd|secret)\\s*=\\s*['\"][^'\"]+['\"]"
 }
-LLM Model
-In cli_agent/cli_agent.py, modify:
 
-python
-self.model = "llama3.2"          # Ollama model name
-self.api_url = "http://localhost:11434/api/generate"
+Location:
+
+sastscanner/rules/
 Database Schema
-PostgreSQL table repositories is automatically created. Redis keys are sha256(command:content) with 24h TTL.
-
+PostgreSQL → repository metadata
+Redis → cache (sha256(command:content), TTL 24h)
 Extending
-Adding a New Language
-Add a Tree‑sitter grammar in parser/ (e.g., swift_parser.py).
+Add New Language
+Add parser in parser/
+Update parser_factory.py
+Implement UnifiedNode
+Add New SCA Tool
 
-Update parser_factory.py to recognise file extensions.
+Edit:
 
-Implement the UnifiedNode conversion.
-
-Adding a New SCA Ecosystem
-Edit sca/sca_simple.py – add a detection function and a scanner (e.g., composer_audit for PHP). The dispatcher will call it automatically when a lockfile is detected.
-
+sca/sca_simple.py
 Custom LLM Prompts
-Override methods in cli_agent/cli_agent.py:
 
-review_code(chunk) – for security analysis
+Modify:
 
-generate_test(chunk) – for unit test generation
-
-generate_documentation(chunk) – for docstring generation
-
+review_code()
+generate_test()
+generate_documentation()
 Troubleshooting
 Issue	Solution
-No module named 'magic'	pip install python-magic and sudo apt install libmagic1
-SCA not available	Ensure sca/sca_simple.py exists and required tools (pip-audit, npm, osv-scanner) are in PATH.
-Redis connection failed	Start Redis: redis-server
-PostgreSQL error	Check credentials in data_base_controller.py and ensure the database is created.
-LLM returns empty	Verify Ollama is running and the model is pulled.
+No module named 'magic'	pip install python-magic && sudo apt install libmagic1
+SCA not working	Ensure tools are installed
+Redis error	redis-server
+PostgreSQL error	Check credentials
+LLM empty output	Ensure Ollama is running
 Performance Tips
-Use Redis to avoid re‑processing unchanged chunks (enabled by default).
-
-For large repositories, run --mode sast first, then --mode sca separately.
-
-The vector database (RAG) is optional – you can disable it by commenting out retrieval calls in cli_agent.
-
+Use Redis caching (enabled by default)
+Run SAST and SCA separately for large repos
+Disable RAG if not needed
 Contributing
-Pull requests are welcome. Please follow the existing code style and add tests for new features.
+
+Pull requests are welcome. Please follow code style and add tests.
 
 License
-[Your chosen license – e.g., MIT]
 
-Built with Tree‑sitter, Ollama, PostgreSQL, Redis, and a lot of ❤️.
+MIT (or your preferred license)
 
-text
-
-
+Tech Stack
+Tree-sitter
+Ollama
+PostgreSQL
+Redis
+ChromaDB
