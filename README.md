@@ -33,7 +33,7 @@ It integrates:
 - ✅ Monorepo support  
 
 ---
-
+```
 ## Architecture
 
 
@@ -61,10 +61,10 @@ User Input (repo path, command, mode)
 
 
 ---
-
+```
 ## Directory Structure
 
-
+```
 repo-llm/
 ├── main.py # Entry point
 ├── cli_agent/ # LLM interaction (Ollama)
@@ -78,7 +78,7 @@ repo-llm/
 ├── dataset/ # CVE fixes dataset
 ├── requirements.txt
 └── README.md
-
+```
 
 ---
 
