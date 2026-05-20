@@ -11,14 +11,20 @@ from controllers.repo_scanner import RepoScanner
 from sastscanner.taint.taint_engine import TaintEngine
 from sastscanner.core.rule_engine import RuleEngine
 
-# ========== SCA Integration ==========
+# ========== SCA Integration (pure Python wrapper) ==========
+# ========== SCA Integration (pure Python wrapper) ==========
+SCA_AVAILABLE = False
 try:
-    from sca import analyze as sca_analyze
+    import sys
+    # Add the top‑level sca/ directory (where sca_simple.py lives)
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'sca'))
+    from sca_simple import scan_dependencies
     SCA_AVAILABLE = True
-except ImportError:
-    print("⚠️ SCA module not found – SCA disabled")
-    SCA_AVAILABLE = False
-# =====================================
+    print("✅ SCA simple scanner loaded")
+except ImportError as e:
+    print(f"⚠️ SCA simple scanner not found – SCA disabled (error: {e})")
+# ============================================================
+# ============================================================
 
 def debug(title, data=None):
     print(f"\n🧪 [{title}]")
@@ -39,47 +45,28 @@ def inspect_nodes(nodes):
     return True
 
 def run_sca_only(repo_path, command, db, redis_client):
-    """Run only SCA analysis and produce report."""
-    print("\n📦 Running SCA only...")
+    """Run only SCA analysis using the simple scanner and produce report."""
+    print("\n📦 Running SCA only (using simple scanner)...")
     sca_vulns = []
     try:
-        sca_results = sca_analyze(repo_path)
-        sub_projects = sca_results.get('sub_projects', [])
-        for proj in sub_projects:
-            for vuln in proj.get('vulnerabilities', []):
-                if isinstance(vuln, dict):
-                    sca_vulns.append({
-                        "package": vuln.get("package_name", "unknown"),
-                        "version": vuln.get("package_version", ""),
-                        "cve": vuln.get("vulnerability_id", ""),
-                        "severity": vuln.get("severity", "UNKNOWN"),
-                        "cvss_score": vuln.get("cvss_score"),
-                        "file_path": vuln.get("file_path", ""),
-                        "ecosystem": vuln.get("ecosystem", ""),
-                        "description": vuln.get("description", ""),
-                    })
-                else:
-                    sca_vulns.append({
-                        "package": getattr(vuln, "package_name", "unknown"),
-                        "version": getattr(vuln, "package_version", ""),
-                        "cve": getattr(vuln, "vulnerability_id", ""),
-                        "severity": getattr(vuln, "severity", "UNKNOWN"),
-                        "cvss_score": getattr(vuln, "cvss_score", None),
-                        "file_path": getattr(vuln, "file_path", ""),
-                        "ecosystem": getattr(vuln, "ecosystem", ""),
-                        "description": getattr(vuln, "description", ""),
-                    })
+        # scan_dependencies returns a list of dicts directly
+        sca_vulns = scan_dependencies(repo_path)
         print(f"✅ SCA found {len(sca_vulns)} vulnerable dependencies")
         if sca_vulns:
             # Generate report
             report_lines = ["# SCA Vulnerability Report\n"]
             for v in sca_vulns:
-                report_lines.append(f"- **{v['package']}** {v['version']} : {v['cve']} (severity: {v['severity']})")
+                report_lines.append(
+                    f"- **{v['package']}** {v['version']} : {v['cve']} "
+                    f"(severity: {v['severity']})"
+                )
             sca_text = "\n".join(report_lines)
             print("\n" + sca_text)
-            # Optionally save to file
+            # Save to file
             with open("sca_report.md", "w") as f:
                 f.write(sca_text)
+        else:
+            print("No vulnerable dependencies found.")
     except Exception as e:
         print(f"❌ SCA error: {e}")
 
@@ -129,14 +116,14 @@ def run_sast_pipeline(repo_path, command, db, redis_client, sca_vulns=None):
         if not inspect_nodes(nodes):
             continue
 
-        # Taint
+        # Taint analysis
         try:
             taint_findings = taint_engine.analyze(nodes, language=language) or []
         except Exception as e:
             print("❌ Taint error:", e)
             taint_findings = []
 
-        # Rules
+        # Rule engine
         try:
             rule_findings = rule_engine.scan(
                 chunk,
@@ -155,7 +142,8 @@ def run_sast_pipeline(repo_path, command, db, redis_client, sca_vulns=None):
         # SCA context for this chunk (if available)
         chunk_sca = None
         if sca_vulns:
-            manifest_names = {"package.json", "Cargo.toml", "requirements.txt", "go.mod", "pom.xml", "build.gradle"}
+            manifest_names = {"package.json", "Cargo.toml", "requirements.txt",
+                              "go.mod", "pom.xml", "build.gradle"}
             if file_name in manifest_names:
                 chunk_sca = [v for v in sca_vulns if v.get("file_path") == file_path]
                 if not chunk_sca:
@@ -164,7 +152,7 @@ def run_sast_pipeline(repo_path, command, db, redis_client, sca_vulns=None):
                 chunk_sca = {"summary": f"SCA found {len(sca_vulns)} vulnerable dependencies"}
         chunk['sca_context'] = chunk_sca
 
-        # LLM
+        # LLM step
         result = None
         try:
             if security_findings or len(nodes) > 5 or chunk_sca:
@@ -179,16 +167,16 @@ def run_sast_pipeline(repo_path, command, db, redis_client, sca_vulns=None):
 
         print("\n🤖 [LLM RESULT]", bool(result))
 
-        # Cache
+        # Cache chunk
         content = chunk.get("content", "")
         if content:
             content_hash = hashlib.sha256(f"{command}:{content}".encode()).hexdigest()
             redis_client.set(content_hash, "done", ex=86400)
 
-    # Final combined report if both SAST and SCA were run
+    # Final SCA summary if both SAST and SCA were run
     if sca_vulns and command == "review":
         print("\n📦 SCA Findings Summary (from earlier):")
-        for v in sca_vulns[:5]:  # show first 5
+        for v in sca_vulns[:5]:
             print(f"  - {v['package']} {v['version']} : {v['cve']}")
 
 def run_llm(repo_path: str, command: str, mode: str):
@@ -206,38 +194,20 @@ def run_llm(repo_path: str, command: str, mode: str):
         return
 
     try:
-        # If mode is 'sca', run only SCA and exit
+        # SCA‑only mode
         if mode == 'sca':
             if not SCA_AVAILABLE:
-                print("❌ SCA not available. Install sca module.")
+                print("❌ SCA not available. Install sca_simple.py and required tools.")
                 return
             run_sca_only(repo_path, command, db, redis_client)
             return
 
-        # For 'sast' or 'full', we need SCA results if full
+        # For SAST or full, we may need SCA results
         sca_vulns = None
         if mode == 'full' and SCA_AVAILABLE:
-            print("\n📦 Running SCA before SAST...")
+            print("\n📦 Running SCA before SAST (simple scanner)...")
             try:
-                sca_results = sca_analyze(repo_path)
-                sub_projects = sca_results.get('sub_projects', [])
-                sca_vulns = []
-                for proj in sub_projects:
-                    for vuln in proj.get('vulnerabilities', []):
-                        if isinstance(vuln, dict):
-                            sca_vulns.append({
-                                "package": vuln.get("package_name", "unknown"),
-                                "version": vuln.get("package_version", ""),
-                                "cve": vuln.get("vulnerability_id", ""),
-                                "severity": vuln.get("severity", "UNKNOWN"),
-                            })
-                        else:
-                            sca_vulns.append({
-                                "package": getattr(vuln, "package_name", "unknown"),
-                                "version": getattr(vuln, "package_version", ""),
-                                "cve": getattr(vuln, "vulnerability_id", ""),
-                                "severity": getattr(vuln, "severity", "UNKNOWN"),
-                            })
+                sca_vulns = scan_dependencies(repo_path)
                 print(f"✅ SCA found {len(sca_vulns)} vulnerable dependencies")
             except Exception as e:
                 print(f"❌ SCA error (continuing without SCA): {e}")
@@ -259,7 +229,8 @@ def run_llm(repo_path: str, command: str, mode: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("path", nargs="?", default=".")
-    parser.add_argument("--mode", choices=["sast", "sca", "full"], help="Run only SAST, only SCA, or full pipeline")
+    parser.add_argument("--mode", choices=["sast", "sca", "full"],
+                        help="Run only SAST, only SCA, or full pipeline")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("review")
     sub.add_parser("test")
