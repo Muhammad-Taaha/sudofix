@@ -38,26 +38,26 @@ It integrates:
 
 
 User Input (repo path, command, mode)
-│
-▼
+                  │
+                  ▼
 ┌─────────────────────────────────────────┐
-│ main.py │
-│ - Parse arguments │
-│ - Interactive mode selection │
-│ - Dispatch to SAST / SCA / Full │
+│ main.py                                 │
+│ - Parse arguments                       │
+│ - Interactive mode selection            │
+│ - Dispatch to SAST / SCA / Full         │
 └────────────┬────────────────┬───────────┘
-│ │
+             │                │
 ┌───────▼───────┐ ┌─────▼──────────┐
-│ SAST pipeline │ │ SCA pipeline │
-│ (taint+rules) │ │ (scan_deps) │
+│ SAST pipeline │ │ SCA pipeline   │
+│ (taint+rules) │ │ (scan_deps)    │
 └───────┬───────┘ └─────┬──────────┘
-│ │
-└────────┬───────┘
-▼
-┌────────────────┐
-│ RAG + LLM │
-│ (CliAgent) │
-└────────────────┘
+        │               │
+        └────────┬──────┘
+                 ▼
+        ┌────────────────┐
+        │ RAG + LLM      │
+        │ (CliAgent)     │
+        └────────────────┘
 
 
 ---
