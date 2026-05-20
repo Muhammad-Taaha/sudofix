@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from psycopg2.extras import RealDictCursor
 import hashlib
 
+
 load_dotenv()
 
 

@@ -54,19 +54,26 @@ class VectorStore:
         """
         Retrieve similar vulnerable/fixed pairs with optional language and pattern filters.
         """
-        # Build filter condition
-        where_filter = {}
+        # Build filter condition with $and if multiple filters
+        conditions = []
         if language:
-            where_filter['language'] = language
+            conditions.append({'language': language})
         if pattern:
-            where_filter['pattern'] = pattern
+            conditions.append({'pattern': pattern})
         
+        if len(conditions) == 1:
+            where_filter = conditions[0]
+        elif len(conditions) > 1:
+            where_filter = {'$and': conditions}
+        else:
+            where_filter = None
+
         results = self.collection.query(
             query_texts=[query_text],
             n_results=top_k,
-            where=where_filter if where_filter else None
+            where=where_filter
         )
-        
+
         # Format results
         retrieved = []
         if results['ids'][0]:
