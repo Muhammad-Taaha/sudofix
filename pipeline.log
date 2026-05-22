@@ -1331,3 +1331,317 @@ Counter({'function': 1})
 
 🔻 Cleaning up...
 👋 Done
+
+🚀 Starting pipeline | Mode: SAST | Command: review
+Connected to Redis successfully
+
+🔄 Syncing repo for SAST...
+
+🧪 [PIPELINE]
+Total chunks = 0
+⚠️ Failed to load rule from sastscanner.rules.framework.django.csrf_disabled: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.django.debug_true: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.django.sql_injection_raw: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.flask.debug_mode: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.flask.secret_key_weak: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.spring.sql_injection_jpa: No module named 'sastscanner.rules.framework.base_rule'
+[RuleEngine] Loaded 35 rules:
+  - Hardcoded API Key / Token
+  - Hardcoded Password
+  - Missing Authentication Decorator
+  - Session Fixation Vulnerability
+  - Weak Cryptographic Hash
+  - Missing Rate Limiting
+  - Potential Race Condition
+  - Hardcoded Cryptographic Key
+  - Insecure Random Number Generation
+  - SSL/TLS Certificate Verification Disabled
+  - Weak Cryptographic Algorithm
+  - Sensitive Information in Logs
+  - Stacktrace Information Leak
+  - Unsafe Deserialization (pickle)
+  - Unsafe YAML Deserialization
+  - Insecure File Permissions
+  - Path Traversal via open()
+  - Insecure Temporary File Creation
+  - Unsafe File Upload
+  - Hardcoded Secret
+  - Dynamic Code Execution (eval/exec)
+  - Command Injection
+  - LDAP Injection
+  - NoSQL Injection (MongoDB)
+  - SQL Injection via String Concatenation
+  - ORM Raw SQL Execution
+  - Server‑Side Template Injection
+  - Dangerous Mutable Default Argument
+  - HTTP Request Without Timeout
+  - SSL/TLS Verification Disabled
+  - Server‑Side Request Forgery (SSRF)
+  - DOM XSS via innerHTML
+  - Reflected XSS
+  - Stored XSS (Unsanitized DB Input)
+  - Unsafe Rendering / XSS via mark_safe
+Loading precomputed embeddings and metadata...
+Loaded existing collection with 2400 documents
+Connected to Redis successfully
+⚠️ Failed to load rule from sastscanner.rules.framework.django.csrf_disabled: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.django.debug_true: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.django.sql_injection_raw: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.flask.debug_mode: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.flask.secret_key_weak: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.spring.sql_injection_jpa: No module named 'sastscanner.rules.framework.base_rule'
+[RuleEngine] Loaded 35 rules:
+  - Hardcoded API Key / Token
+  - Hardcoded Password
+  - Missing Authentication Decorator
+  - Session Fixation Vulnerability
+  - Weak Cryptographic Hash
+  - Missing Rate Limiting
+  - Potential Race Condition
+  - Hardcoded Cryptographic Key
+  - Insecure Random Number Generation
+  - SSL/TLS Certificate Verification Disabled
+  - Weak Cryptographic Algorithm
+  - Sensitive Information in Logs
+  - Stacktrace Information Leak
+  - Unsafe Deserialization (pickle)
+  - Unsafe YAML Deserialization
+  - Insecure File Permissions
+  - Path Traversal via open()
+  - Insecure Temporary File Creation
+  - Unsafe File Upload
+  - Hardcoded Secret
+  - Dynamic Code Execution (eval/exec)
+  - Command Injection
+  - LDAP Injection
+  - NoSQL Injection (MongoDB)
+  - SQL Injection via String Concatenation
+  - ORM Raw SQL Execution
+  - Server‑Side Template Injection
+  - Dangerous Mutable Default Argument
+  - HTTP Request Without Timeout
+  - SSL/TLS Verification Disabled
+  - Server‑Side Request Forgery (SSRF)
+  - DOM XSS via innerHTML
+  - Reflected XSS
+  - Stored XSS (Unsanitized DB Input)
+  - Unsafe Rendering / XSS via mark_safe
+
+🔻 Cleaning up...
+👋 Done
+
+🚀 Starting pipeline | Mode: SAST | Command: review
+Connected to Redis successfully
+
+🔄 Syncing repo for SAST...
+
+🧪 Parsing: 1
+
+🧪 Parsing: Cargo.lock
+
+🧪 Parsing: Cargo.toml
+
+🧪 Parsing: README.md
+
+🧪 Parsing: src/main.rs
+
+🧪 Parsing: src/vm.rs
+🔄 Syncing/Repairing main.rs...
+💾 main.rs synced with Entity ID: 314
+🔄 Syncing/Repairing vm.rs...
+💾 vm.rs synced with Entity ID: 315
+
+🧪 Parsing: 1
+
+🧪 Parsing: Cargo.lock
+
+🧪 Parsing: Cargo.toml
+
+🧪 Parsing: README.md
+
+🧪 Parsing: src/main.rs
+
+🧪 Parsing: src/vm.rs
+
+🧪 [PIPELINE]
+Total chunks = 9
+⚠️ Failed to load rule from sastscanner.rules.framework.django.csrf_disabled: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.django.debug_true: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.django.sql_injection_raw: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.flask.debug_mode: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.flask.secret_key_weak: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.spring.sql_injection_jpa: No module named 'sastscanner.rules.framework.base_rule'
+[RuleEngine] Loaded 35 rules:
+  - Hardcoded API Key / Token
+  - Hardcoded Password
+  - Missing Authentication Decorator
+  - Session Fixation Vulnerability
+  - Weak Cryptographic Hash
+  - Missing Rate Limiting
+  - Potential Race Condition
+  - Hardcoded Cryptographic Key
+  - Insecure Random Number Generation
+  - SSL/TLS Certificate Verification Disabled
+  - Weak Cryptographic Algorithm
+  - Sensitive Information in Logs
+  - Stacktrace Information Leak
+  - Unsafe Deserialization (pickle)
+  - Unsafe YAML Deserialization
+  - Insecure File Permissions
+  - Path Traversal via open()
+  - Insecure Temporary File Creation
+  - Unsafe File Upload
+  - Hardcoded Secret
+  - Dynamic Code Execution (eval/exec)
+  - Command Injection
+  - LDAP Injection
+  - NoSQL Injection (MongoDB)
+  - SQL Injection via String Concatenation
+  - ORM Raw SQL Execution
+  - Server‑Side Template Injection
+  - Dangerous Mutable Default Argument
+  - HTTP Request Without Timeout
+  - SSL/TLS Verification Disabled
+  - Server‑Side Request Forgery (SSRF)
+  - DOM XSS via innerHTML
+  - Reflected XSS
+  - Stored XSS (Unsanitized DB Input)
+  - Unsafe Rendering / XSS via mark_safe
+Loading precomputed embeddings and metadata...
+Loaded existing collection with 2400 documents
+Connected to Redis successfully
+⚠️ Failed to load rule from sastscanner.rules.framework.django.csrf_disabled: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.django.debug_true: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.django.sql_injection_raw: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.flask.debug_mode: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.flask.secret_key_weak: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.spring.sql_injection_jpa: No module named 'sastscanner.rules.framework.base_rule'
+[RuleEngine] Loaded 35 rules:
+  - Hardcoded API Key / Token
+  - Hardcoded Password
+  - Missing Authentication Decorator
+  - Session Fixation Vulnerability
+  - Weak Cryptographic Hash
+  - Missing Rate Limiting
+  - Potential Race Condition
+  - Hardcoded Cryptographic Key
+  - Insecure Random Number Generation
+  - SSL/TLS Certificate Verification Disabled
+  - Weak Cryptographic Algorithm
+  - Sensitive Information in Logs
+  - Stacktrace Information Leak
+  - Unsafe Deserialization (pickle)
+  - Unsafe YAML Deserialization
+  - Insecure File Permissions
+  - Path Traversal via open()
+  - Insecure Temporary File Creation
+  - Unsafe File Upload
+  - Hardcoded Secret
+  - Dynamic Code Execution (eval/exec)
+  - Command Injection
+  - LDAP Injection
+  - NoSQL Injection (MongoDB)
+  - SQL Injection via String Concatenation
+  - ORM Raw SQL Execution
+  - Server‑Side Template Injection
+  - Dangerous Mutable Default Argument
+  - HTTP Request Without Timeout
+  - SSL/TLS Verification Disabled
+  - Server‑Side Request Forgery (SSRF)
+  - DOM XSS via innerHTML
+  - Reflected XSS
+  - Stored XSS (Unsanitized DB Input)
+  - Unsafe Rendering / XSS via mark_safe
+
+======================================================================
+
+🧪 [CHUNK]
+{'file': 'main.rs', 'language': 'rust', 'nodes': 1}
+📄 AST OK | nodes = 1
+🧪 Sample distribution:
+Counter({'function': 1})
+
+🤖 [LLM RESULT] False
+
+======================================================================
+
+🧪 [CHUNK]
+{'file': 'vm.rs', 'language': 'rust', 'nodes': 1}
+📄 AST OK | nodes = 1
+🧪 Sample distribution:
+Counter({'class': 1})
+
+🤖 [LLM RESULT] False
+
+======================================================================
+
+🧪 [CHUNK]
+{'file': 'vm.rs', 'language': 'rust', 'nodes': 1}
+📄 AST OK | nodes = 1
+🧪 Sample distribution:
+Counter({'class': 1})
+
+🤖 [LLM RESULT] False
+
+======================================================================
+
+🧪 [CHUNK]
+{'file': 'vm.rs', 'language': 'rust', 'nodes': 1}
+📄 AST OK | nodes = 1
+🧪 Sample distribution:
+Counter({'class': 1})
+
+🤖 [LLM RESULT] False
+
+======================================================================
+
+🧪 [CHUNK]
+{'file': 'vm.rs', 'language': 'rust', 'nodes': 1}
+📄 AST OK | nodes = 1
+🧪 Sample distribution:
+Counter({'class': 1})
+
+🤖 [LLM RESULT] False
+
+======================================================================
+
+🧪 [CHUNK]
+{'file': 'vm.rs', 'language': 'rust', 'nodes': 1}
+📄 AST OK | nodes = 1
+🧪 Sample distribution:
+Counter({'class': 1})
+
+🤖 [LLM RESULT] False
+
+======================================================================
+
+🧪 [CHUNK]
+{'file': 'vm.rs', 'language': 'rust', 'nodes': 1}
+📄 AST OK | nodes = 1
+🧪 Sample distribution:
+Counter({'class': 1})
+
+🤖 [LLM RESULT] False
+
+======================================================================
+
+🧪 [CHUNK]
+{'file': 'vm.rs', 'language': 'rust', 'nodes': 1}
+📄 AST OK | nodes = 1
+🧪 Sample distribution:
+Counter({'class': 1})
+
+🤖 [LLM RESULT] False
+
+======================================================================
+
+🧪 [CHUNK]
+{'file': 'vm.rs', 'language': 'rust', 'nodes': 1}
+📄 AST OK | nodes = 1
+🧪 Sample distribution:
+Counter({'class': 1})
+
+🤖 [LLM RESULT] False
+
+🔻 Cleaning up...
+👋 Done

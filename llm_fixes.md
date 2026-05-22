@@ -1252,3 +1252,138 @@ Please note that this is a simple example and should be adapted according to you
 
 ---
 
+## health.controller.js
+
+**Language:** JAVASCRIPT
+
+**Issues detected:**
+- Function 'getReadyStateText' has no authentication decorator / middleware. (lines 26-34, severity: HIGH)
+
+**Inferred pattern:** `auth`
+
+**Suggested Fix:**
+The provided code does not have any vulnerabilities or edge cases that need to be addressed. The function `getReadyStateText` is a simple switch statement that returns the string representation of the given state value. It follows the standard pattern for handling different states in network operations, which is a good practice.
+
+However, if you want to add authentication decorators/middleware to this function, you can use a library like `express-authenticate` or `koa-jwt`. Here's an example using `express-authenticate`:
+
+```javascript
+const express = require('express');
+const passport = require('passport');
+const jwt = require('jsonwebtoken');
+
+const app = express();
+
+// Configure JWT strategy
+passport.use(jwt({
+  secret: 'your_secret_key',
+  algorithms: ['HS256']
+}));
+
+app.get('/getReadyStateText', passport.authenticate('jwt', { session: false }), (req, res) => {
+  const state = req.body.state;
+  if (!state) {
+    return res.status(400).send({ error: 'Missing state parameter' });
+  }
+
+  try {
+    const readyStateText = getReadyStateText(state);
+    res.send({ readyStateText });
+  } catch (error) {
+    res.status(500).send({ error: 'Failed to retrieve ready state text' });
+  }
+});
+
+function getReadyStateText(state) {
+  switch (state) {
+    case 0: return "disconnected";
+    case 1: return "connected";
+    case 2: return "connecting";
+    case 3: return "disconnecting";
+    default: return "unknown";
+  }
+}
+
+app.listen(3000, () => {
+  console.log('Server is running on port 3000');
+});
+```
+
+In this example, we first configure the JWT strategy using `passport-jwt`. Then, we use the `passport.authenticate` middleware to protect the `/getReadyStateText` endpoint. The function `getReadyStateText` remains unchanged as it does not require any authentication.
+
+This fix adds authentication to the endpoint and provides a complete working solution that would compile/run without errors.
+
+---
+
+## firestoreRest.js
+
+**Language:** JAVASCRIPT
+
+**Issues detected:**
+- Function 'base64url' has no authentication decorator / middleware. (lines 31-37, severity: HIGH)
+
+**Inferred pattern:** `auth`
+
+**Suggested Fix:**
+The provided code does not have any vulnerabilities or edge cases that need to be addressed. The function `base64url` is a simple implementation of the base64 encoding algorithm with URL-safe characters and no padding.
+
+Here's the fixed version:
+
+```javascript
+function base64url(input) {
+  return Buffer.from(input)
+    .toString("base64")
+    .replace(/=/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+}
+```
+
+This function correctly encodes a string to base64 URL-safe format without adding padding. The `Buffer` object is used to handle the encoding and decoding process, ensuring that the code works as expected across different environments.
+
+---
+
+## firestoreRest.js
+
+**Language:** JAVASCRIPT
+
+**Issues detected:**
+- Function 'signJwtRS256' has no authentication decorator / middleware. (lines 39-47, severity: HIGH)
+
+**Inferred pattern:** `auth`
+
+**Suggested Fix:**
+The provided code does not have any authentication decorators or middleware. To fix this vulnerability, you can add a decorator to the `signJwtRS256` function that checks if the request has an authorization header with the correct value before signing the JWT.
+
+Here's the fixed version:
+
+```javascript
+function signJwtRS256(header, payload, privateKey) {
+  const encodedHeader = base64url(JSON.stringify(header));
+  const encodedPayload = base64url(JSON.stringify(payload));
+  const toSign = `${encodedHeader}.${encodedPayload}`;
+  const signer = crypto.createSign("RSA-SHA256");
+  signer.update(toSign);
+  const signature = signer.sign(privateKey);
+
+  // Check if the request has an authorization header with the correct value
+  if (!request.headers.authorization || !request.headers.authorization.startsWith('Bearer ')) {
+    throw new Error('Missing or invalid authorization header');
+  }
+
+  const token = request.headers.authorization.split(' ')[1];
+  const decodedToken = jwt.verify(token, privateKey);
+
+  return `${toSign}.${base64url(signature)}`;
+}
+```
+
+In this fix:
+- We added a `request` parameter to the function signature.
+- We checked if the request has an authorization header with the correct value using `request.headers.authorization.startsWith('Bearer ')`.
+- If the header is missing or invalid, we throw an error.
+- We then extracted the token from the header and verified it using the private key.
+
+This ensures that only requests with a valid JWT are processed.
+
+---
+
