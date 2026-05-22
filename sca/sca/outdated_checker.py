@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
-import time
-from typing import List, Optional, Dict, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import requests
 from packaging.version import Version, InvalidVersion
@@ -28,7 +27,6 @@ class OutdatedChecker:
     """Query public registries for the latest version of each package."""
 
     def check(self, packages: List[ResolvedPackage], imports: Optional[Dict[str, List[Tuple[str, int]]]] = None) -> List[OutdatedFinding]:
-        start = time.time()
         findings = []
         for pkg in packages:
             latest = self._get_latest_version(pkg.name, pkg.ecosystem)
@@ -47,12 +45,13 @@ class OutdatedChecker:
                         file_paths=file_paths,
                     )
                 )
-        elapsed = time.time() - start
-        logger.info(f"Outdated check completed in {elapsed:.2f}s for {len(packages)} packages")
         return findings
 
     def _get_latest_version(self, name: str, ecosystem: str) -> Optional[str]:
         """Query the appropriate registry API."""
+        import os
+        if os.environ.get("SCA_OFFLINE") == "1":
+            return None
         try:
             if ecosystem == "pypi":
                 resp = requests.get(f"https://pypi.org/pypi/{name}/json", timeout=10)

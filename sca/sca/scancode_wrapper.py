@@ -8,6 +8,7 @@ import json
 import os
 import platform
 import subprocess
+import shutil
 from pathlib import Path
 from typing import Dict, Optional, Tuple, Any
 
@@ -28,7 +29,7 @@ def run_scan(
     processes: int = 4,
     quiet: bool = True,
     scancode_dir: Optional[str] = None,
-    process_timeout: int = 600,
+    process_timeout: int = 120,
     cwd: Optional[str] = None,
 ) -> Tuple[str, Dict[str, Any]]:
     """
@@ -52,6 +53,11 @@ def run_scan(
     FileNotFoundError if output file is missing after scan.
     """
     exe = _get_executable(scancode_dir)
+    # Fail fast when scancode executable is not available on PATH
+    if shutil.which(exe) is None and not Path(exe).exists():
+        raise FileNotFoundError(
+            f"ScanCode executable not found: {exe}. Make sure scancode is installed and on PATH, or set scancode_dir."
+        )
     cmd = [exe, f"--{scan_type}"]
     cmd += ["--json", output_file]
     cmd += ["-n", str(processes), "--timeout", str(timeout)]
