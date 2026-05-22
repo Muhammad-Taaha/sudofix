@@ -41,7 +41,7 @@ def main():
     update_parser.add_argument("--input", help="Directory containing OSV JSON files")
 
     # --- rules list ---
-    subparsers.add_parser("rules", help="List available rules")  # will be handled below
+    subparsers.add_parser("rules", help="List available rules")
 
     # --- config init ---
     subparsers.add_parser("config", help="Initialize a default config file")

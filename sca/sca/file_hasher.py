@@ -132,15 +132,26 @@ def hash_files(
                 logger.warning("Skipping file due to hash error", path=str(path))
     return results
 
-# Add to src/sca/file_hasher.py
-
-import magic
-
 def is_binary_file(file_path: Path) -> bool:
     """Return True if the file is binary (not text)."""
     try:
-        mime = magic.from_file(str(file_path), mime=True)
-        return not mime.startswith("text/") and mime != "application/json"
+        with open(file_path, "rb") as f:
+            chunk = f.read(1024)
+        if not chunk:
+            return False
+        if b"\x00" in chunk:
+            return True
+        # Try to decode as utf-8. If it fails and has many non-ascii characters, it's binary.
+        try:
+            chunk.decode("utf-8")
+            return False
+        except UnicodeDecodeError:
+            # check non-printable characters ratio
+            text_chars = bytearray({7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7f})
+            non_text = [c for c in chunk if c not in text_chars]
+            if len(non_text) / len(chunk) > 0.30:
+                return True
+            return False
     except Exception:
         return False
 

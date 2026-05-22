@@ -1,0 +1,7 @@
+id: js-innerHTML-injection
+message: "Avoid using innerHTML with user input - vulnerable to XSS"
+severity: high
+language: JavaScript
+rule:
+  pattern: |
+    .innerHTML = $VAR

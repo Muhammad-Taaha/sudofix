@@ -7,17 +7,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from sca.utils import get_logger
-from sca.ecosystem import detect_sub_projects, detect_manifests
-from sca.resolver.plugin import discover_plugins, get_all_resolvers
-from sca.resolver.registry import ResolverRegistry  # fallback
-from sca.file_hasher import discover_files
-from sca.import_mapper import map_imports
-from sca.scanners import LicenseScanner, VendoredScanner
-from sca.rule_scanner import RuleScanner, HAS_AST_GREP
-from sca.vulnerability_mapper import VulnerabilityMapper
-from sca.outdated_checker import OutdatedChecker
-from sca.git_history import GitHistoryScanner
-from sca.binary_fingerprint import BinaryFingerprinter
 
 logger = get_logger(__name__)
 
@@ -32,25 +21,33 @@ def analyze(
     history_since: Optional[str] = None,
     **kwargs: Any,
 ) -> Dict[str, Any]:
+    """Analyze a project for dependencies, licenses, and vulnerabilities."""
+    # Lazy import to avoid hanging on module load
+    from sca.ecosystem import detect_sub_projects, detect_manifests
+    from sca.resolver.plugin import discover_plugins, get_all_resolvers
+    from sca.resolver.registry import ResolverRegistry
+    from sca.git_history import GitHistoryScanner
+    
     logger.info("Starting analysis", path=project_path)
 
-    # Ensure plugins are loaded
+    # Load resolver plugins
     discover_plugins()
     resolvers = get_all_resolvers()
     if not resolvers:
-        # fallback to old registry if plugins not found
-        from sca.resolver.plugin.npm import NpmResolver
-        from sca.resolver.plugin.pypi import PypiResolver
-        from sca.resolver.plugin.maven import MavenResolver
-        from sca.resolver.plugin.go import GoResolver
+        from sca.resolver.plugins.npm import NpmResolver
+        from sca.resolver.plugins.pypi import PypiResolver
+        from sca.resolver.plugins.maven import MavenResolver
+        from sca.resolver.plugins.go import GoResolver
         resolvers = [NpmResolver(), PypiResolver(), MavenResolver(), GoResolver()]
     registry = ResolverRegistry(resolvers)
 
-    # Detect sub-projects
-    sub_projects = detect_sub_projects(project_path)
-    if not sub_projects:
-        # No manifests found, treat whole directory as single project
+    # Detect sub-projects (monorepo) unless disabled
+    if kwargs.get('no_subprojects'):
         sub_projects = [Path(project_path).resolve()]
+    else:
+        sub_projects = detect_sub_projects(project_path)
+        if not sub_projects:
+            sub_projects = [Path(project_path).resolve()]
 
     all_results = []
     for sub_project in sub_projects:
@@ -59,12 +56,11 @@ def analyze(
             project_path=str(sub_project),
             registry=registry,
             cache_dir=cache_dir,
-            include_git_history=False,  # history only at top-level if desired
         )
         sub_result["project_path"] = str(sub_project)
         all_results.append(sub_result)
 
-    # Run git history only once on the root (if requested)
+    # Git history (on root)
     history_findings = []
     if include_git_history:
         try:
@@ -87,11 +83,19 @@ def analyze(
 
 def _analyze_single(
     project_path: str,
-    registry: ResolverRegistry,
+    registry: Any,
     cache_dir: Optional[str] = None,
-    include_git_history: bool = False,
 ) -> Dict[str, Any]:
-    """Run the full pipeline on a single project (no sub‑project recursion)."""
+    """Analyze a single project (non-monorepo or individual sub-project)."""
+    # Lazy imports
+    from sca.ecosystem import detect_manifests
+    from sca.file_hasher import discover_files
+    from sca.import_mapper import map_imports
+    from sca.scanners import LicenseScanner, VendoredScanner
+    from sca.rule_scanner import RuleScanner, HAS_AST_GREP
+    from sca.vulnerability_mapper import VulnerabilityMapper
+    from sca.outdated_checker import OutdatedChecker
+    
     # 1. Dependency resolution
     ecosystems = detect_manifests(project_path)
     packages = registry.resolve(project_path, ecosystems)
@@ -99,7 +103,7 @@ def _analyze_single(
     # 2. File discovery
     all_files = discover_files(project_path, skip_binary=True, skip_minified=True)
 
-    # 3. Import mapping (scoped to this project directory)
+    # 3. Import mapping
     imports = map_imports(all_files)
 
     # 4. License scan
@@ -142,19 +146,6 @@ def _analyze_single(
         outdated_findings = checker.check(packages, imports)
     except Exception as e:
         logger.warning(f"Outdated check failed: {e}")
-    
-    # 9. Binary fingerprinting (optional)
-    binary_pseudo_deps = []
-    try:
-        fingerprinter = BinaryFingerprinter(known_patterns={})  # can be configured later
-        binary_pseudo_deps = [
-            dataclasses.asdict(d)
-            for f in all_files
-            if is_binary_file(f)
-            for d in fingerprinter.fingerprint(f)
-        ]
-    except Exception as e:
-        logger.warning(f"Binary fingerprinting failed: {e}")
 
     return {
         "packages": [dataclasses.asdict(p) for p in packages],
