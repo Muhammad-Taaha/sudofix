@@ -1,0 +1,1333 @@
+
+🚀 Starting pipeline | Mode: SAST | Command: review
+Connected to Redis successfully
+
+🔄 Syncing repo for SAST...
+
+🧪 Parsing: generate_all_test_cases.py
+DEBUG: args = ['BASE', 'category', 'subdir'], kwargs = []
+DEBUG: args = ['path'], kwargs = ['exist_ok=True']
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["f'Created {path}'"], kwargs = []
+DEBUG: args = ["'All test cases generated successfully.'"], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['os.path.join(path, filename)', "'w'"], kwargs = []
+DEBUG: args = ['content.lstrip()'], kwargs = []
+DEBUG: args = ['category', 'rule_name', 'files'], kwargs = []
+DEBUG: args = ['path', 'filename'], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: generate_auth_test_cases.py
+DEBUG: args = [], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["'Auth test cases generated successfully.'"], kwargs = []
+DEBUG: args = ['BASE', 'rule'], kwargs = []
+DEBUG: args = ['rule_dir'], kwargs = ['exist_ok=True']
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["f'Created {rule_dir}'"], kwargs = []
+DEBUG: args = ['rule_dir', 'filename'], kwargs = []
+DEBUG: args = ['filepath', "'w'"], kwargs = []
+DEBUG: args = ['content.lstrip()'], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: generate_test_cases.py
+DEBUG: args = [], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["'File‑related test cases generated successfully.'"], kwargs = []
+DEBUG: args = ['BASE', 'rule'], kwargs = []
+DEBUG: args = ['rule_dir'], kwargs = ['exist_ok=True']
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["f'Created {rule_dir}'"], kwargs = []
+DEBUG: args = ['rule_dir', 'filename'], kwargs = []
+DEBUG: args = ['filepath', "'w'"], kwargs = []
+DEBUG: args = ['content.lstrip()'], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: run_sast_tests.py
+DEBUG: args = ['0', 'str(repo_root)'], kwargs = []
+DEBUG: args = ["f'Loaded rules: {[r.name for r in RuleRunner().rules]}'"], kwargs = []
+DEBUG: args = ['repo_root'], kwargs = []
+DEBUG: args = ["f'\\n🔍 Scanning: {file_path}'"], kwargs = []
+DEBUG: args = ['str(test_dir)'], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['f"\\n{\'=\' * 50}"'], kwargs = []
+DEBUG: args = ["f'Results: {passed}/{total} tests passed'"], kwargs = []
+DEBUG: args = ['0 if passed == total else 1'], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['__file__'], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["f'❌ Missing: {file_path}'"], kwargs = []
+DEBUG: args = ['test_dir'], kwargs = []
+DEBUG: args = ['str(file_path)'], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["f'❌ Test base directory not found: {BASE_TESTS}'"], kwargs = []
+DEBUG: args = ["'   Run generate_test_cases.py first.'"], kwargs = []
+DEBUG: args = ['1'], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['__file__'], kwargs = []
+DEBUG: args = ['file_path'], kwargs = []
+DEBUG: args = ["f'   ❌ Error: {e}'"], kwargs = []
+DEBUG: args = ["f'   ✅ Safe – no findings (as expected)'"], kwargs = []
+DEBUG: args = ["f'   ❌ Safe triggered: {rule_names}'"], kwargs = []
+DEBUG: args = ['f"   ✅ Vulnerable – found \'{expected_rule}\'"'], kwargs = []
+DEBUG: args = ['f"   ❌ Expected \'{expected_rule}\' but got {rule_names}"'], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["f'⚠️ Skipping {rule_dir} – missing'"], kwargs = []
+DEBUG: args = ['test_path', 'filename', 'expected'], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_api_key/README.md
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_api_key/safe.go
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_api_key/safe.java
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_api_key/safe.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_api_key/safe.py
+DEBUG: args = ["'API_KEY'"], kwargs = []
+DEBUG: args = ["'SECRET_KEY'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_api_key/vulnerable.go
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_api_key/vulnerable.java
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_api_key/vulnerable.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_api_key/vulnerable.py
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_password/README.md
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_password/safe.go
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_password/safe.java
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_password/safe.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_password/safe.py
+DEBUG: args = ["'DB_PASSWORD'"], kwargs = []
+DEBUG: args = ["'DB_PASS'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_password/vulnerable.go
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_password/vulnerable.java
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_password/vulnerable.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_password/vulnerable.py
+
+🧪 Parsing: test_cases_for_sast/auth/missing_auth_decorator/README.md
+
+🧪 Parsing: test_cases_for_sast/auth/missing_auth_decorator/safe.go
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/auth/missing_auth_decorator/safe.java
+
+🧪 Parsing: test_cases_for_sast/auth/missing_auth_decorator/safe.js
+
+🧪 Parsing: test_cases_for_sast/auth/missing_auth_decorator/safe.py
+DEBUG: args = ["'/admin'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/auth/missing_auth_decorator/vulnerable.go
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/auth/missing_auth_decorator/vulnerable.java
+
+🧪 Parsing: test_cases_for_sast/auth/missing_auth_decorator/vulnerable.js
+
+🧪 Parsing: test_cases_for_sast/auth/missing_auth_decorator/vulnerable.py
+DEBUG: args = ["'/admin'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/auth/session_fixation/README.md
+
+🧪 Parsing: test_cases_for_sast/auth/session_fixation/safe.go
+
+🧪 Parsing: test_cases_for_sast/auth/session_fixation/safe.java
+
+🧪 Parsing: test_cases_for_sast/auth/session_fixation/safe.js
+
+🧪 Parsing: test_cases_for_sast/auth/session_fixation/safe.py
+DEBUG: args = ["'/login'"], kwargs = ["methods=['POST']"]
+DEBUG: args = ["request.form['user']"], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["'/dashboard'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/auth/session_fixation/vulnerable.go
+
+🧪 Parsing: test_cases_for_sast/auth/session_fixation/vulnerable.java
+
+🧪 Parsing: test_cases_for_sast/auth/session_fixation/vulnerable.js
+
+🧪 Parsing: test_cases_for_sast/auth/session_fixation/vulnerable.py
+DEBUG: args = ["'/login'"], kwargs = ["methods=['POST']"]
+DEBUG: args = ["request.form['user']"], kwargs = []
+DEBUG: args = ["'/dashboard'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/auth/weak_password_hash/README.md
+
+🧪 Parsing: test_cases_for_sast/auth/weak_password_hash/safe.go
+
+🧪 Parsing: test_cases_for_sast/auth/weak_password_hash/safe.java
+
+🧪 Parsing: test_cases_for_sast/auth/weak_password_hash/safe.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/auth/weak_password_hash/safe.py
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['password'], kwargs = []
+DEBUG: args = ['password.encode()'], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/auth/weak_password_hash/vulnerable.go
+
+🧪 Parsing: test_cases_for_sast/auth/weak_password_hash/vulnerable.java
+
+🧪 Parsing: test_cases_for_sast/auth/weak_password_hash/vulnerable.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/auth/weak_password_hash/vulnerable.py
+DEBUG: args = [], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['password.encode()'], kwargs = []
+DEBUG: args = ['password.encode()'], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/business_logic/missing_rate_limit/README.md
+
+🧪 Parsing: test_cases_for_sast/business_logic/missing_rate_limit/safe.py
+DEBUG: args = ['app'], kwargs = []
+DEBUG: args = ["'/login'"], kwargs = ["methods=['POST']"]
+DEBUG: args = ["'5 per minute'"], kwargs = []
+DEBUG: args = ["request.form['user']"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/business_logic/missing_rate_limit/vulnerable.py
+DEBUG: args = ["'/login'"], kwargs = ["methods=['POST']"]
+DEBUG: args = ["request.form['user']"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/business_logic/race_condition/README.md
+
+🧪 Parsing: test_cases_for_sast/business_logic/race_condition/safe.py
+DEBUG: args = ["'data.txt'", "'r+'"], kwargs = []
+DEBUG: args = ['f', 'fcntl.LOCK_EX'], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['0'], kwargs = []
+DEBUG: args = ['content + data'], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['f', 'fcntl.LOCK_UN'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/business_logic/race_condition/vulnerable.py
+DEBUG: args = ["'data.txt'", "'r'"], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["'data.txt'", "'w'"], kwargs = []
+DEBUG: args = ['new_content'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/crypto/hardcoded_key/README.md
+
+🧪 Parsing: test_cases_for_sast/crypto/hardcoded_key/safe.java
+
+🧪 Parsing: test_cases_for_sast/crypto/hardcoded_key/safe.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/crypto/hardcoded_key/safe.py
+DEBUG: args = ["'SECRET_KEY'"], kwargs = []
+DEBUG: args = ["'API_KEY'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/crypto/hardcoded_key/vulnerable.java
+
+🧪 Parsing: test_cases_for_sast/crypto/hardcoded_key/vulnerable.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/crypto/hardcoded_key/vulnerable.py
+
+🧪 Parsing: test_cases_for_sast/crypto/insecure_random/README.md
+
+🧪 Parsing: test_cases_for_sast/crypto/insecure_random/safe.java
+
+🧪 Parsing: test_cases_for_sast/crypto/insecure_random/safe.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/crypto/insecure_random/safe.py
+DEBUG: args = ['100'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/crypto/insecure_random/vulnerable.java
+
+🧪 Parsing: test_cases_for_sast/crypto/insecure_random/vulnerable.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/crypto/insecure_random/vulnerable.py
+DEBUG: args = ['1', '100'], kwargs = []
+DEBUG: args = ["['a', 'b']"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/crypto/weak_hash/README.md
+
+🧪 Parsing: test_cases_for_sast/crypto/weak_hash/safe.go
+
+🧪 Parsing: test_cases_for_sast/crypto/weak_hash/safe.java
+
+🧪 Parsing: test_cases_for_sast/crypto/weak_hash/safe.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/crypto/weak_hash/safe.py
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['hash_sha256'], kwargs = []
+DEBUG: args = ['password.encode()'], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/crypto/weak_hash/vulnerable.go
+
+🧪 Parsing: test_cases_for_sast/crypto/weak_hash/vulnerable.java
+
+🧪 Parsing: test_cases_for_sast/crypto/weak_hash/vulnerable.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/crypto/weak_hash/vulnerable.py
+DEBUG: args = [], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['hash_md5', 'hash_sha1'], kwargs = []
+DEBUG: args = ['password.encode()'], kwargs = []
+DEBUG: args = ['password.encode()'], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/data_exposure/sensitive_log/README.md
+
+🧪 Parsing: test_cases_for_sast/data_exposure/sensitive_log/safe.py
+DEBUG: args = ["'User logged in'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/data_exposure/sensitive_log/vulnerable.py
+DEBUG: args = ["f'User password: {password}'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/data_exposure/stacktrace_leak/README.md
+
+🧪 Parsing: test_cases_for_sast/data_exposure/stacktrace_leak/safe.py
+DEBUG: args = ["'An error occurred'"], kwargs = ['exc_info=False']
+
+🧪 Parsing: test_cases_for_sast/data_exposure/stacktrace_leak/vulnerable.py
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/deserialization/gob_deserialize/README.md
+
+🧪 Parsing: test_cases_for_sast/deserialization/gob_deserialize/safe.go
+
+🧪 Parsing: test_cases_for_sast/deserialization/gob_deserialize/vulnerable.go
+
+🧪 Parsing: test_cases_for_sast/deserialization/java_objectinput/README.md
+
+🧪 Parsing: test_cases_for_sast/deserialization/java_objectinput/safe.java
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/deserialization/java_objectinput/vulnerable.java
+
+🧪 Parsing: test_cases_for_sast/deserialization/pickle_load/README.md
+
+🧪 Parsing: test_cases_for_sast/deserialization/pickle_load/safe.py
+DEBUG: args = ['user_input'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/deserialization/pickle_load/vulnerable.py
+DEBUG: args = ['user_input'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/deserialization/yaml_unsafe/README.md
+
+🧪 Parsing: test_cases_for_sast/deserialization/yaml_unsafe/safe.java
+
+🧪 Parsing: test_cases_for_sast/deserialization/yaml_unsafe/safe.py
+DEBUG: args = ['user_input'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/deserialization/yaml_unsafe/vulnerable.java
+
+🧪 Parsing: test_cases_for_sast/deserialization/yaml_unsafe/vulnerable.py
+DEBUG: args = ['user_input'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/hardcoded_secrets/README.md
+
+🧪 Parsing: test_cases_for_sast/file_related/hardcoded_secrets/safe.py
+DEBUG: args = ["'API_KEY'"], kwargs = []
+DEBUG: args = ["'DB_PASSWORD'"], kwargs = []
+DEBUG: args = ["'AWS_SECRET_ACCESS_KEY'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/hardcoded_secrets/vulnerable.py
+
+🧪 Parsing: test_cases_for_sast/file_related/insecure_permissions/README.md
+
+🧪 Parsing: test_cases_for_sast/file_related/insecure_permissions/safe.py
+DEBUG: args = ["'/tmp/secret.txt'", '384'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/insecure_permissions/vulnerable.py
+DEBUG: args = ["'/tmp/secret.txt'", '511'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/path_traversal_open/README.md
+
+🧪 Parsing: test_cases_for_sast/file_related/path_traversal_open/safe.py
+DEBUG: args = ["'Enter file name: '"], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['user_file', "'r'"], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/path_traversal_open/vulnerable.py
+DEBUG: args = ["'Enter file name: '"], kwargs = []
+DEBUG: args = ['user_file', "'r'"], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/tempfile_race/README.md
+
+🧪 Parsing: test_cases_for_sast/file_related/tempfile_race/safe.py
+DEBUG: args = [], kwargs = ["mode='w'", 'delete=False']
+DEBUG: args = ["'data'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/tempfile_race/vulnerable.py
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['filename', "'w'"], kwargs = []
+DEBUG: args = ["'data'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/unsafe_upload/README.md
+
+🧪 Parsing: test_cases_for_sast/file_related/unsafe_upload/safe.py
+DEBUG: args = ['file.filename'], kwargs = []
+DEBUG: args = ['filename'], kwargs = []
+DEBUG: args = ["os.path.join('/uploads', filename)"], kwargs = []
+DEBUG: args = ["'/uploads'", 'filename'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/unsafe_upload/vulnerable.py
+DEBUG: args = ["'/uploads/' + file.filename"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/weak_crypto/README.md
+
+🧪 Parsing: test_cases_for_sast/file_related/weak_crypto/safe.py
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['password.encode()'], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/weak_crypto/vulnerable.py
+DEBUG: args = [], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['password.encode()'], kwargs = []
+DEBUG: args = ['password.encode()'], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/xss/README.md
+
+🧪 Parsing: test_cases_for_sast/file_related/xss/safe.js
+
+🧪 Parsing: test_cases_for_sast/file_related/xss/vulnerable.js
+
+🧪 Parsing: test_cases_for_sast/framework/django_debug_true/README.md
+
+🧪 Parsing: test_cases_for_sast/framework/django_debug_true/safe.py
+DEBUG: args = ["'DEBUG'", "'False'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/framework/django_debug_true/vulnerable.py
+
+🧪 Parsing: test_cases_for_sast/framework/flask_debug_mode/README.md
+
+🧪 Parsing: test_cases_for_sast/framework/flask_debug_mode/safe.py
+DEBUG: args = [], kwargs = ['debug=False']
+
+🧪 Parsing: test_cases_for_sast/framework/flask_debug_mode/vulnerable.py
+DEBUG: args = [], kwargs = ['debug=True']
+
+🧪 Parsing: test_cases_for_sast/framework/spring_sql_injection/README.md
+
+🧪 Parsing: test_cases_for_sast/framework/spring_sql_injection/safe.java
+
+🧪 Parsing: test_cases_for_sast/framework/spring_sql_injection/vulnerable.java
+
+🧪 Parsing: test_cases_for_sast/hardecode_secrets-checker/test.txt
+
+🧪 Parsing: test_cases_for_sast/injection/code_eval/README.md
+
+🧪 Parsing: test_cases_for_sast/injection/code_eval/safe.py
+DEBUG: args = ["'Enter a number: '"], kwargs = []
+DEBUG: args = ['user_input'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/code_eval/vulnerable.py
+DEBUG: args = ["'Enter expression: '"], kwargs = []
+DEBUG: args = ['user_code'], kwargs = []
+DEBUG: args = ['result'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/command_injection/README.md
+
+🧪 Parsing: test_cases_for_sast/injection/command_injection/safe.py
+DEBUG: args = ["'ls -la'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/command_injection/vulnerable.py
+DEBUG: args = ["'Enter command: '"], kwargs = []
+DEBUG: args = ['user_cmd'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/command_os_system/README.md
+
+🧪 Parsing: test_cases_for_sast/injection/command_os_system/safe.py
+DEBUG: args = ["'Enter something: '"], kwargs = []
+DEBUG: args = ["f'You entered: {user_input}'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/command_os_system/vulnerable.py
+DEBUG: args = ["'Enter command: '"], kwargs = []
+DEBUG: args = ['user_input'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/command_subprocess/README.md
+
+🧪 Parsing: test_cases_for_sast/injection/command_subprocess/safe.py
+DEBUG: args = ["['ls', '-la']"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/command_subprocess/vulnerable.py
+DEBUG: args = ['cmd'], kwargs = ['shell=True']
+
+🧪 Parsing: test_cases_for_sast/injection/ldap_injection/README.md
+
+🧪 Parsing: test_cases_for_sast/injection/ldap_injection/safe.py
+DEBUG: args = ["'Enter filter: '"], kwargs = []
+DEBUG: args = ["'ldap://localhost'"], kwargs = []
+DEBUG: args = ['user_filter'], kwargs = []
+DEBUG: args = ["'dc=example,dc=com'", 'ldap.SCOPE_SUBTREE', "f'(uid={safe_filter})'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/ldap_injection/vulnerable.py
+DEBUG: args = ["'Enter filter: '"], kwargs = []
+DEBUG: args = ["'ldap://localhost'"], kwargs = []
+DEBUG: args = ["'dc=example,dc=com'", 'ldap.SCOPE_SUBTREE', 'user_filter'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/nosql_mongo/README.md
+
+🧪 Parsing: test_cases_for_sast/injection/nosql_mongo/safe.js
+
+🧪 Parsing: test_cases_for_sast/injection/nosql_mongo/vulnerable.js
+
+🧪 Parsing: test_cases_for_sast/injection/sql_concat/README.md
+
+🧪 Parsing: test_cases_for_sast/injection/sql_concat/safe.py
+DEBUG: args = ["'Enter ID: '"], kwargs = []
+DEBUG: args = ["'db.sqlite'"], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["'SELECT * FROM users WHERE id = ?'", '(user_id,)'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/sql_concat/vulnerable.py
+DEBUG: args = ["'Enter ID: '"], kwargs = []
+DEBUG: args = ["'db.sqlite'"], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["'SELECT * FROM users WHERE id = ' + user_id"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/sql_orm_raw/README.md
+
+🧪 Parsing: test_cases_for_sast/injection/sql_orm_raw/safe.py
+DEBUG: args = ["'name'"], kwargs = []
+DEBUG: args = ["'SELECT * FROM myapp_mymodel WHERE name = %s'", '[user_input]'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/sql_orm_raw/vulnerable.py
+DEBUG: args = ["'name'"], kwargs = []
+DEBUG: args = ['"SELECT * FROM myapp_mymodel WHERE name = \'" + user_input + "\'"'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/template_engine/README.md
+
+🧪 Parsing: test_cases_for_sast/injection/template_engine/safe.py
+DEBUG: args = ["'Enter name: '"], kwargs = []
+DEBUG: args = ["'Hello {{ name }}'"], kwargs = []
+DEBUG: args = [], kwargs = ['name=user_input']
+
+🧪 Parsing: test_cases_for_sast/injection/template_engine/vulnerable.py
+DEBUG: args = ["'Enter template: '"], kwargs = []
+DEBUG: args = ['user_template'], kwargs = []
+DEBUG: args = [], kwargs = ["name='test'"]
+
+🧪 Parsing: test_cases_for_sast/misc/dangerous_defaults/README.md
+
+🧪 Parsing: test_cases_for_sast/misc/dangerous_defaults/safe.py
+DEBUG: args = ['item'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/misc/dangerous_defaults/vulnerable.py
+DEBUG: args = ['item'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/network/http_no_timeout/README.md
+
+🧪 Parsing: test_cases_for_sast/network/http_no_timeout/safe.py
+DEBUG: args = ["'https://example.com'"], kwargs = ['timeout=5']
+
+🧪 Parsing: test_cases_for_sast/network/http_no_timeout/vulnerable.py
+DEBUG: args = ["'https://example.com'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/network/ssl_disabled/README.md
+
+🧪 Parsing: test_cases_for_sast/network/ssl_disabled/safe.js
+
+🧪 Parsing: test_cases_for_sast/network/ssl_disabled/safe.py
+DEBUG: args = ["'https://example.com'"], kwargs = ['verify=True']
+
+🧪 Parsing: test_cases_for_sast/network/ssl_disabled/vulnerable.js
+
+🧪 Parsing: test_cases_for_sast/network/ssl_disabled/vulnerable.py
+DEBUG: args = ["'https://example.com'"], kwargs = ['verify=False']
+
+🧪 Parsing: test_cases_for_sast/network/ssrf/README.md
+
+🧪 Parsing: test_cases_for_sast/network/ssrf/safe.js
+
+🧪 Parsing: test_cases_for_sast/network/ssrf/safe.py
+DEBUG: args = ["'url'"], kwargs = []
+DEBUG: args = ["('http://example.com', 'https://example.com')"], kwargs = []
+DEBUG: args = ['url'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/network/ssrf/vulnerable.js
+
+🧪 Parsing: test_cases_for_sast/network/ssrf/vulnerable.py
+DEBUG: args = ["'url'"], kwargs = []
+DEBUG: args = ['url'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/xss/dom_innerhtml/README.md
+
+🧪 Parsing: test_cases_for_sast/xss/dom_innerhtml/safe.js
+
+🧪 Parsing: test_cases_for_sast/xss/dom_innerhtml/vulnerable.js
+
+🧪 Parsing: test_cases_for_sast/xss/reflected_xss/README.md
+
+🧪 Parsing: test_cases_for_sast/xss/reflected_xss/safe.py
+DEBUG: args = ["'/hello'"], kwargs = []
+DEBUG: args = ["'name'"], kwargs = []
+DEBUG: args = ["'hello.html'"], kwargs = ['name=name']
+
+🧪 Parsing: test_cases_for_sast/xss/reflected_xss/vulnerable.py
+DEBUG: args = ["'/hello'"], kwargs = []
+DEBUG: args = ["'name'"], kwargs = []
+DEBUG: args = ["f'<h1>Hello {name}</h1>'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/xss/stored_xss/README.md
+
+🧪 Parsing: test_cases_for_sast/xss/stored_xss/safe.py
+DEBUG: args = ["request.POST['comment']"], kwargs = []
+DEBUG: args = [], kwargs = ['text=safe_text']
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/xss/stored_xss/vulnerable.py
+DEBUG: args = [], kwargs = []
+DEBUG: args = [], kwargs = ["text=request.POST['comment']"]
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/xss/unsafe_rendering/README.md
+
+🧪 Parsing: test_cases_for_sast/xss/unsafe_rendering/safe.py
+DEBUG: args = ["'data'"], kwargs = []
+DEBUG: args = ['user_input'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/xss/unsafe_rendering/vulnerable.py
+DEBUG: args = ["'data'"], kwargs = []
+DEBUG: args = ['user_input'], kwargs = []
+
+🧪 Parsing: generate_all_test_cases.py
+DEBUG: args = ['BASE', 'category', 'subdir'], kwargs = []
+DEBUG: args = ['path'], kwargs = ['exist_ok=True']
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["f'Created {path}'"], kwargs = []
+DEBUG: args = ["'All test cases generated successfully.'"], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['os.path.join(path, filename)', "'w'"], kwargs = []
+DEBUG: args = ['content.lstrip()'], kwargs = []
+DEBUG: args = ['category', 'rule_name', 'files'], kwargs = []
+DEBUG: args = ['path', 'filename'], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: generate_auth_test_cases.py
+DEBUG: args = [], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["'Auth test cases generated successfully.'"], kwargs = []
+DEBUG: args = ['BASE', 'rule'], kwargs = []
+DEBUG: args = ['rule_dir'], kwargs = ['exist_ok=True']
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["f'Created {rule_dir}'"], kwargs = []
+DEBUG: args = ['rule_dir', 'filename'], kwargs = []
+DEBUG: args = ['filepath', "'w'"], kwargs = []
+DEBUG: args = ['content.lstrip()'], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: generate_test_cases.py
+DEBUG: args = [], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["'File‑related test cases generated successfully.'"], kwargs = []
+DEBUG: args = ['BASE', 'rule'], kwargs = []
+DEBUG: args = ['rule_dir'], kwargs = ['exist_ok=True']
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["f'Created {rule_dir}'"], kwargs = []
+DEBUG: args = ['rule_dir', 'filename'], kwargs = []
+DEBUG: args = ['filepath', "'w'"], kwargs = []
+DEBUG: args = ['content.lstrip()'], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: run_sast_tests.py
+DEBUG: args = ['0', 'str(repo_root)'], kwargs = []
+DEBUG: args = ["f'Loaded rules: {[r.name for r in RuleRunner().rules]}'"], kwargs = []
+DEBUG: args = ['repo_root'], kwargs = []
+DEBUG: args = ["f'\\n🔍 Scanning: {file_path}'"], kwargs = []
+DEBUG: args = ['str(test_dir)'], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['f"\\n{\'=\' * 50}"'], kwargs = []
+DEBUG: args = ["f'Results: {passed}/{total} tests passed'"], kwargs = []
+DEBUG: args = ['0 if passed == total else 1'], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['__file__'], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["f'❌ Missing: {file_path}'"], kwargs = []
+DEBUG: args = ['test_dir'], kwargs = []
+DEBUG: args = ['str(file_path)'], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["f'❌ Test base directory not found: {BASE_TESTS}'"], kwargs = []
+DEBUG: args = ["'   Run generate_test_cases.py first.'"], kwargs = []
+DEBUG: args = ['1'], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['__file__'], kwargs = []
+DEBUG: args = ['file_path'], kwargs = []
+DEBUG: args = ["f'   ❌ Error: {e}'"], kwargs = []
+DEBUG: args = ["f'   ✅ Safe – no findings (as expected)'"], kwargs = []
+DEBUG: args = ["f'   ❌ Safe triggered: {rule_names}'"], kwargs = []
+DEBUG: args = ['f"   ✅ Vulnerable – found \'{expected_rule}\'"'], kwargs = []
+DEBUG: args = ['f"   ❌ Expected \'{expected_rule}\' but got {rule_names}"'], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["f'⚠️ Skipping {rule_dir} – missing'"], kwargs = []
+DEBUG: args = ['test_path', 'filename', 'expected'], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_api_key/README.md
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_api_key/safe.go
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_api_key/safe.java
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_api_key/safe.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_api_key/safe.py
+DEBUG: args = ["'API_KEY'"], kwargs = []
+DEBUG: args = ["'SECRET_KEY'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_api_key/vulnerable.go
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_api_key/vulnerable.java
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_api_key/vulnerable.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_api_key/vulnerable.py
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_password/README.md
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_password/safe.go
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_password/safe.java
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_password/safe.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_password/safe.py
+DEBUG: args = ["'DB_PASSWORD'"], kwargs = []
+DEBUG: args = ["'DB_PASS'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_password/vulnerable.go
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_password/vulnerable.java
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_password/vulnerable.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/auth/hardcoded_password/vulnerable.py
+
+🧪 Parsing: test_cases_for_sast/auth/missing_auth_decorator/README.md
+
+🧪 Parsing: test_cases_for_sast/auth/missing_auth_decorator/safe.go
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/auth/missing_auth_decorator/safe.java
+
+🧪 Parsing: test_cases_for_sast/auth/missing_auth_decorator/safe.js
+
+🧪 Parsing: test_cases_for_sast/auth/missing_auth_decorator/safe.py
+DEBUG: args = ["'/admin'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/auth/missing_auth_decorator/vulnerable.go
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/auth/missing_auth_decorator/vulnerable.java
+
+🧪 Parsing: test_cases_for_sast/auth/missing_auth_decorator/vulnerable.js
+
+🧪 Parsing: test_cases_for_sast/auth/missing_auth_decorator/vulnerable.py
+DEBUG: args = ["'/admin'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/auth/session_fixation/README.md
+
+🧪 Parsing: test_cases_for_sast/auth/session_fixation/safe.go
+
+🧪 Parsing: test_cases_for_sast/auth/session_fixation/safe.java
+
+🧪 Parsing: test_cases_for_sast/auth/session_fixation/safe.js
+
+🧪 Parsing: test_cases_for_sast/auth/session_fixation/safe.py
+DEBUG: args = ["'/login'"], kwargs = ["methods=['POST']"]
+DEBUG: args = ["request.form['user']"], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["'/dashboard'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/auth/session_fixation/vulnerable.go
+
+🧪 Parsing: test_cases_for_sast/auth/session_fixation/vulnerable.java
+
+🧪 Parsing: test_cases_for_sast/auth/session_fixation/vulnerable.js
+
+🧪 Parsing: test_cases_for_sast/auth/session_fixation/vulnerable.py
+DEBUG: args = ["'/login'"], kwargs = ["methods=['POST']"]
+DEBUG: args = ["request.form['user']"], kwargs = []
+DEBUG: args = ["'/dashboard'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/auth/weak_password_hash/README.md
+
+🧪 Parsing: test_cases_for_sast/auth/weak_password_hash/safe.go
+
+🧪 Parsing: test_cases_for_sast/auth/weak_password_hash/safe.java
+
+🧪 Parsing: test_cases_for_sast/auth/weak_password_hash/safe.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/auth/weak_password_hash/safe.py
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['password'], kwargs = []
+DEBUG: args = ['password.encode()'], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/auth/weak_password_hash/vulnerable.go
+
+🧪 Parsing: test_cases_for_sast/auth/weak_password_hash/vulnerable.java
+
+🧪 Parsing: test_cases_for_sast/auth/weak_password_hash/vulnerable.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/auth/weak_password_hash/vulnerable.py
+DEBUG: args = [], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['password.encode()'], kwargs = []
+DEBUG: args = ['password.encode()'], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/business_logic/missing_rate_limit/README.md
+
+🧪 Parsing: test_cases_for_sast/business_logic/missing_rate_limit/safe.py
+DEBUG: args = ['app'], kwargs = []
+DEBUG: args = ["'/login'"], kwargs = ["methods=['POST']"]
+DEBUG: args = ["'5 per minute'"], kwargs = []
+DEBUG: args = ["request.form['user']"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/business_logic/missing_rate_limit/vulnerable.py
+DEBUG: args = ["'/login'"], kwargs = ["methods=['POST']"]
+DEBUG: args = ["request.form['user']"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/business_logic/race_condition/README.md
+
+🧪 Parsing: test_cases_for_sast/business_logic/race_condition/safe.py
+DEBUG: args = ["'data.txt'", "'r+'"], kwargs = []
+DEBUG: args = ['f', 'fcntl.LOCK_EX'], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['0'], kwargs = []
+DEBUG: args = ['content + data'], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['f', 'fcntl.LOCK_UN'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/business_logic/race_condition/vulnerable.py
+DEBUG: args = ["'data.txt'", "'r'"], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["'data.txt'", "'w'"], kwargs = []
+DEBUG: args = ['new_content'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/crypto/hardcoded_key/README.md
+
+🧪 Parsing: test_cases_for_sast/crypto/hardcoded_key/safe.java
+
+🧪 Parsing: test_cases_for_sast/crypto/hardcoded_key/safe.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/crypto/hardcoded_key/safe.py
+DEBUG: args = ["'SECRET_KEY'"], kwargs = []
+DEBUG: args = ["'API_KEY'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/crypto/hardcoded_key/vulnerable.java
+
+🧪 Parsing: test_cases_for_sast/crypto/hardcoded_key/vulnerable.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/crypto/hardcoded_key/vulnerable.py
+
+🧪 Parsing: test_cases_for_sast/crypto/insecure_random/README.md
+
+🧪 Parsing: test_cases_for_sast/crypto/insecure_random/safe.java
+
+🧪 Parsing: test_cases_for_sast/crypto/insecure_random/safe.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/crypto/insecure_random/safe.py
+DEBUG: args = ['100'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/crypto/insecure_random/vulnerable.java
+
+🧪 Parsing: test_cases_for_sast/crypto/insecure_random/vulnerable.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/crypto/insecure_random/vulnerable.py
+DEBUG: args = ['1', '100'], kwargs = []
+DEBUG: args = ["['a', 'b']"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/crypto/weak_hash/README.md
+
+🧪 Parsing: test_cases_for_sast/crypto/weak_hash/safe.go
+
+🧪 Parsing: test_cases_for_sast/crypto/weak_hash/safe.java
+
+🧪 Parsing: test_cases_for_sast/crypto/weak_hash/safe.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/crypto/weak_hash/safe.py
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['hash_sha256'], kwargs = []
+DEBUG: args = ['password.encode()'], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/crypto/weak_hash/vulnerable.go
+
+🧪 Parsing: test_cases_for_sast/crypto/weak_hash/vulnerable.java
+
+🧪 Parsing: test_cases_for_sast/crypto/weak_hash/vulnerable.js
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/crypto/weak_hash/vulnerable.py
+DEBUG: args = [], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['hash_md5', 'hash_sha1'], kwargs = []
+DEBUG: args = ['password.encode()'], kwargs = []
+DEBUG: args = ['password.encode()'], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/data_exposure/sensitive_log/README.md
+
+🧪 Parsing: test_cases_for_sast/data_exposure/sensitive_log/safe.py
+DEBUG: args = ["'User logged in'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/data_exposure/sensitive_log/vulnerable.py
+DEBUG: args = ["f'User password: {password}'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/data_exposure/stacktrace_leak/README.md
+
+🧪 Parsing: test_cases_for_sast/data_exposure/stacktrace_leak/safe.py
+DEBUG: args = ["'An error occurred'"], kwargs = ['exc_info=False']
+
+🧪 Parsing: test_cases_for_sast/data_exposure/stacktrace_leak/vulnerable.py
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/deserialization/gob_deserialize/README.md
+
+🧪 Parsing: test_cases_for_sast/deserialization/gob_deserialize/safe.go
+
+🧪 Parsing: test_cases_for_sast/deserialization/gob_deserialize/vulnerable.go
+
+🧪 Parsing: test_cases_for_sast/deserialization/java_objectinput/README.md
+
+🧪 Parsing: test_cases_for_sast/deserialization/java_objectinput/safe.java
+📄 EMPTY AST → skipping
+
+🧪 Parsing: test_cases_for_sast/deserialization/java_objectinput/vulnerable.java
+
+🧪 Parsing: test_cases_for_sast/deserialization/pickle_load/README.md
+
+🧪 Parsing: test_cases_for_sast/deserialization/pickle_load/safe.py
+DEBUG: args = ['user_input'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/deserialization/pickle_load/vulnerable.py
+DEBUG: args = ['user_input'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/deserialization/yaml_unsafe/README.md
+
+🧪 Parsing: test_cases_for_sast/deserialization/yaml_unsafe/safe.java
+
+🧪 Parsing: test_cases_for_sast/deserialization/yaml_unsafe/safe.py
+DEBUG: args = ['user_input'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/deserialization/yaml_unsafe/vulnerable.java
+
+🧪 Parsing: test_cases_for_sast/deserialization/yaml_unsafe/vulnerable.py
+DEBUG: args = ['user_input'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/hardcoded_secrets/README.md
+
+🧪 Parsing: test_cases_for_sast/file_related/hardcoded_secrets/safe.py
+DEBUG: args = ["'API_KEY'"], kwargs = []
+DEBUG: args = ["'DB_PASSWORD'"], kwargs = []
+DEBUG: args = ["'AWS_SECRET_ACCESS_KEY'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/hardcoded_secrets/vulnerable.py
+
+🧪 Parsing: test_cases_for_sast/file_related/insecure_permissions/README.md
+
+🧪 Parsing: test_cases_for_sast/file_related/insecure_permissions/safe.py
+DEBUG: args = ["'/tmp/secret.txt'", '384'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/insecure_permissions/vulnerable.py
+DEBUG: args = ["'/tmp/secret.txt'", '511'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/path_traversal_open/README.md
+
+🧪 Parsing: test_cases_for_sast/file_related/path_traversal_open/safe.py
+DEBUG: args = ["'Enter file name: '"], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['user_file', "'r'"], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/path_traversal_open/vulnerable.py
+DEBUG: args = ["'Enter file name: '"], kwargs = []
+DEBUG: args = ['user_file', "'r'"], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/tempfile_race/README.md
+
+🧪 Parsing: test_cases_for_sast/file_related/tempfile_race/safe.py
+DEBUG: args = [], kwargs = ["mode='w'", 'delete=False']
+DEBUG: args = ["'data'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/tempfile_race/vulnerable.py
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['filename', "'w'"], kwargs = []
+DEBUG: args = ["'data'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/unsafe_upload/README.md
+
+🧪 Parsing: test_cases_for_sast/file_related/unsafe_upload/safe.py
+DEBUG: args = ['file.filename'], kwargs = []
+DEBUG: args = ['filename'], kwargs = []
+DEBUG: args = ["os.path.join('/uploads', filename)"], kwargs = []
+DEBUG: args = ["'/uploads'", 'filename'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/unsafe_upload/vulnerable.py
+DEBUG: args = ["'/uploads/' + file.filename"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/weak_crypto/README.md
+
+🧪 Parsing: test_cases_for_sast/file_related/weak_crypto/safe.py
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['password.encode()'], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/weak_crypto/vulnerable.py
+DEBUG: args = [], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ['password.encode()'], kwargs = []
+DEBUG: args = ['password.encode()'], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/file_related/xss/README.md
+
+🧪 Parsing: test_cases_for_sast/file_related/xss/safe.js
+
+🧪 Parsing: test_cases_for_sast/file_related/xss/vulnerable.js
+
+🧪 Parsing: test_cases_for_sast/framework/django_debug_true/README.md
+
+🧪 Parsing: test_cases_for_sast/framework/django_debug_true/safe.py
+DEBUG: args = ["'DEBUG'", "'False'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/framework/django_debug_true/vulnerable.py
+
+🧪 Parsing: test_cases_for_sast/framework/flask_debug_mode/README.md
+
+🧪 Parsing: test_cases_for_sast/framework/flask_debug_mode/safe.py
+DEBUG: args = [], kwargs = ['debug=False']
+
+🧪 Parsing: test_cases_for_sast/framework/flask_debug_mode/vulnerable.py
+DEBUG: args = [], kwargs = ['debug=True']
+
+🧪 Parsing: test_cases_for_sast/framework/spring_sql_injection/README.md
+
+🧪 Parsing: test_cases_for_sast/framework/spring_sql_injection/safe.java
+
+🧪 Parsing: test_cases_for_sast/framework/spring_sql_injection/vulnerable.java
+
+🧪 Parsing: test_cases_for_sast/hardecode_secrets-checker/test.txt
+
+🧪 Parsing: test_cases_for_sast/injection/code_eval/README.md
+
+🧪 Parsing: test_cases_for_sast/injection/code_eval/safe.py
+DEBUG: args = ["'Enter a number: '"], kwargs = []
+DEBUG: args = ['user_input'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/code_eval/vulnerable.py
+DEBUG: args = ["'Enter expression: '"], kwargs = []
+DEBUG: args = ['user_code'], kwargs = []
+DEBUG: args = ['result'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/command_injection/README.md
+
+🧪 Parsing: test_cases_for_sast/injection/command_injection/safe.py
+DEBUG: args = ["'ls -la'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/command_injection/vulnerable.py
+DEBUG: args = ["'Enter command: '"], kwargs = []
+DEBUG: args = ['user_cmd'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/command_os_system/README.md
+
+🧪 Parsing: test_cases_for_sast/injection/command_os_system/safe.py
+DEBUG: args = ["'Enter something: '"], kwargs = []
+DEBUG: args = ["f'You entered: {user_input}'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/command_os_system/vulnerable.py
+DEBUG: args = ["'Enter command: '"], kwargs = []
+DEBUG: args = ['user_input'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/command_subprocess/README.md
+
+🧪 Parsing: test_cases_for_sast/injection/command_subprocess/safe.py
+DEBUG: args = ["['ls', '-la']"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/command_subprocess/vulnerable.py
+DEBUG: args = ['cmd'], kwargs = ['shell=True']
+
+🧪 Parsing: test_cases_for_sast/injection/ldap_injection/README.md
+
+🧪 Parsing: test_cases_for_sast/injection/ldap_injection/safe.py
+DEBUG: args = ["'Enter filter: '"], kwargs = []
+DEBUG: args = ["'ldap://localhost'"], kwargs = []
+DEBUG: args = ['user_filter'], kwargs = []
+DEBUG: args = ["'dc=example,dc=com'", 'ldap.SCOPE_SUBTREE', "f'(uid={safe_filter})'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/ldap_injection/vulnerable.py
+DEBUG: args = ["'Enter filter: '"], kwargs = []
+DEBUG: args = ["'ldap://localhost'"], kwargs = []
+DEBUG: args = ["'dc=example,dc=com'", 'ldap.SCOPE_SUBTREE', 'user_filter'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/nosql_mongo/README.md
+
+🧪 Parsing: test_cases_for_sast/injection/nosql_mongo/safe.js
+
+🧪 Parsing: test_cases_for_sast/injection/nosql_mongo/vulnerable.js
+
+🧪 Parsing: test_cases_for_sast/injection/sql_concat/README.md
+
+🧪 Parsing: test_cases_for_sast/injection/sql_concat/safe.py
+DEBUG: args = ["'Enter ID: '"], kwargs = []
+DEBUG: args = ["'db.sqlite'"], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["'SELECT * FROM users WHERE id = ?'", '(user_id,)'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/sql_concat/vulnerable.py
+DEBUG: args = ["'Enter ID: '"], kwargs = []
+DEBUG: args = ["'db.sqlite'"], kwargs = []
+DEBUG: args = [], kwargs = []
+DEBUG: args = ["'SELECT * FROM users WHERE id = ' + user_id"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/sql_orm_raw/README.md
+
+🧪 Parsing: test_cases_for_sast/injection/sql_orm_raw/safe.py
+DEBUG: args = ["'name'"], kwargs = []
+DEBUG: args = ["'SELECT * FROM myapp_mymodel WHERE name = %s'", '[user_input]'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/sql_orm_raw/vulnerable.py
+DEBUG: args = ["'name'"], kwargs = []
+DEBUG: args = ['"SELECT * FROM myapp_mymodel WHERE name = \'" + user_input + "\'"'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/injection/template_engine/README.md
+
+🧪 Parsing: test_cases_for_sast/injection/template_engine/safe.py
+DEBUG: args = ["'Enter name: '"], kwargs = []
+DEBUG: args = ["'Hello {{ name }}'"], kwargs = []
+DEBUG: args = [], kwargs = ['name=user_input']
+
+🧪 Parsing: test_cases_for_sast/injection/template_engine/vulnerable.py
+DEBUG: args = ["'Enter template: '"], kwargs = []
+DEBUG: args = ['user_template'], kwargs = []
+DEBUG: args = [], kwargs = ["name='test'"]
+
+🧪 Parsing: test_cases_for_sast/misc/dangerous_defaults/README.md
+
+🧪 Parsing: test_cases_for_sast/misc/dangerous_defaults/safe.py
+DEBUG: args = ['item'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/misc/dangerous_defaults/vulnerable.py
+DEBUG: args = ['item'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/network/http_no_timeout/README.md
+
+🧪 Parsing: test_cases_for_sast/network/http_no_timeout/safe.py
+DEBUG: args = ["'https://example.com'"], kwargs = ['timeout=5']
+
+🧪 Parsing: test_cases_for_sast/network/http_no_timeout/vulnerable.py
+DEBUG: args = ["'https://example.com'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/network/ssl_disabled/README.md
+
+🧪 Parsing: test_cases_for_sast/network/ssl_disabled/safe.js
+
+🧪 Parsing: test_cases_for_sast/network/ssl_disabled/safe.py
+DEBUG: args = ["'https://example.com'"], kwargs = ['verify=True']
+
+🧪 Parsing: test_cases_for_sast/network/ssl_disabled/vulnerable.js
+
+🧪 Parsing: test_cases_for_sast/network/ssl_disabled/vulnerable.py
+DEBUG: args = ["'https://example.com'"], kwargs = ['verify=False']
+
+🧪 Parsing: test_cases_for_sast/network/ssrf/README.md
+
+🧪 Parsing: test_cases_for_sast/network/ssrf/safe.js
+
+🧪 Parsing: test_cases_for_sast/network/ssrf/safe.py
+DEBUG: args = ["'url'"], kwargs = []
+DEBUG: args = ["('http://example.com', 'https://example.com')"], kwargs = []
+DEBUG: args = ['url'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/network/ssrf/vulnerable.js
+
+🧪 Parsing: test_cases_for_sast/network/ssrf/vulnerable.py
+DEBUG: args = ["'url'"], kwargs = []
+DEBUG: args = ['url'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/xss/dom_innerhtml/README.md
+
+🧪 Parsing: test_cases_for_sast/xss/dom_innerhtml/safe.js
+
+🧪 Parsing: test_cases_for_sast/xss/dom_innerhtml/vulnerable.js
+
+🧪 Parsing: test_cases_for_sast/xss/reflected_xss/README.md
+
+🧪 Parsing: test_cases_for_sast/xss/reflected_xss/safe.py
+DEBUG: args = ["'/hello'"], kwargs = []
+DEBUG: args = ["'name'"], kwargs = []
+DEBUG: args = ["'hello.html'"], kwargs = ['name=name']
+
+🧪 Parsing: test_cases_for_sast/xss/reflected_xss/vulnerable.py
+DEBUG: args = ["'/hello'"], kwargs = []
+DEBUG: args = ["'name'"], kwargs = []
+DEBUG: args = ["f'<h1>Hello {name}</h1>'"], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/xss/stored_xss/README.md
+
+🧪 Parsing: test_cases_for_sast/xss/stored_xss/safe.py
+DEBUG: args = ["request.POST['comment']"], kwargs = []
+DEBUG: args = [], kwargs = ['text=safe_text']
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/xss/stored_xss/vulnerable.py
+DEBUG: args = [], kwargs = []
+DEBUG: args = [], kwargs = ["text=request.POST['comment']"]
+DEBUG: args = [], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/xss/unsafe_rendering/README.md
+
+🧪 Parsing: test_cases_for_sast/xss/unsafe_rendering/safe.py
+DEBUG: args = ["'data'"], kwargs = []
+DEBUG: args = ['user_input'], kwargs = []
+
+🧪 Parsing: test_cases_for_sast/xss/unsafe_rendering/vulnerable.py
+DEBUG: args = ["'data'"], kwargs = []
+DEBUG: args = ['user_input'], kwargs = []
+
+🧪 [PIPELINE]
+Total chunks = 75
+⚠️ Failed to load rule from sastscanner.rules.framework.django.csrf_disabled: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.django.debug_true: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.django.sql_injection_raw: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.flask.debug_mode: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.flask.secret_key_weak: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.spring.sql_injection_jpa: No module named 'sastscanner.rules.framework.base_rule'
+[RuleEngine] Loaded 35 rules:
+  - Hardcoded API Key / Token
+  - Hardcoded Password
+  - Missing Authentication Decorator
+  - Session Fixation Vulnerability
+  - Weak Cryptographic Hash
+  - Missing Rate Limiting
+  - Potential Race Condition
+  - Hardcoded Cryptographic Key
+  - Insecure Random Number Generation
+  - SSL/TLS Certificate Verification Disabled
+  - Weak Cryptographic Algorithm
+  - Sensitive Information in Logs
+  - Stacktrace Information Leak
+  - Unsafe Deserialization (pickle)
+  - Unsafe YAML Deserialization
+  - Insecure File Permissions
+  - Path Traversal via open()
+  - Insecure Temporary File Creation
+  - Unsafe File Upload
+  - Hardcoded Secret
+  - Dynamic Code Execution (eval/exec)
+  - Command Injection
+  - LDAP Injection
+  - NoSQL Injection (MongoDB)
+  - SQL Injection via String Concatenation
+  - ORM Raw SQL Execution
+  - Server‑Side Template Injection
+  - Dangerous Mutable Default Argument
+  - HTTP Request Without Timeout
+  - SSL/TLS Verification Disabled
+  - Server‑Side Request Forgery (SSRF)
+  - DOM XSS via innerHTML
+  - Reflected XSS
+  - Stored XSS (Unsanitized DB Input)
+  - Unsafe Rendering / XSS via mark_safe
+Loading precomputed embeddings and metadata...
+Loaded existing collection with 2400 documents
+Connected to Redis successfully
+⚠️ Failed to load rule from sastscanner.rules.framework.django.csrf_disabled: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.django.debug_true: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.django.sql_injection_raw: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.flask.debug_mode: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.flask.secret_key_weak: No module named 'sastscanner.rules.framework.base_rule'
+⚠️ Failed to load rule from sastscanner.rules.framework.spring.sql_injection_jpa: No module named 'sastscanner.rules.framework.base_rule'
+[RuleEngine] Loaded 35 rules:
+  - Hardcoded API Key / Token
+  - Hardcoded Password
+  - Missing Authentication Decorator
+  - Session Fixation Vulnerability
+  - Weak Cryptographic Hash
+  - Missing Rate Limiting
+  - Potential Race Condition
+  - Hardcoded Cryptographic Key
+  - Insecure Random Number Generation
+  - SSL/TLS Certificate Verification Disabled
+  - Weak Cryptographic Algorithm
+  - Sensitive Information in Logs
+  - Stacktrace Information Leak
+  - Unsafe Deserialization (pickle)
+  - Unsafe YAML Deserialization
+  - Insecure File Permissions
+  - Path Traversal via open()
+  - Insecure Temporary File Creation
+  - Unsafe File Upload
+  - Hardcoded Secret
+  - Dynamic Code Execution (eval/exec)
+  - Command Injection
+  - LDAP Injection
+  - NoSQL Injection (MongoDB)
+  - SQL Injection via String Concatenation
+  - ORM Raw SQL Execution
+  - Server‑Side Template Injection
+  - Dangerous Mutable Default Argument
+  - HTTP Request Without Timeout
+  - SSL/TLS Verification Disabled
+  - Server‑Side Request Forgery (SSRF)
+  - DOM XSS via innerHTML
+  - Reflected XSS
+  - Stored XSS (Unsanitized DB Input)
+  - Unsafe Rendering / XSS via mark_safe
+
+======================================================================
+
+🧪 [CHUNK]
+{'file': 'generate_all_test_cases.py', 'language': 'python', 'nodes': 1}
+📄 AST OK | nodes = 1
+🧪 Sample distribution:
+Counter({'function': 1})
+❌ Pipeline crash: 'Finding' object has no attribute 'get'
+
+🔻 Cleaning up...
+👋 Done
