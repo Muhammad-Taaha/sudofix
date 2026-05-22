@@ -1,0 +1,6 @@
+id: python-subprocess-shell
+message: "Avoid using shell=True in subprocess calls"
+severity: critical
+language: Python
+rule:
+  pattern: subprocess.$_($$$, shell=True)

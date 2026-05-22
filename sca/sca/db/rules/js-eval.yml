@@ -1,0 +1,6 @@
+id: js-eval
+message: "Avoid using eval() - vulnerable to code injection"
+severity: critical
+language: JavaScript
+rule:
+  pattern: eval($$$)

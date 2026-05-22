@@ -1,0 +1,272 @@
+{
+  "vulnerabilities": [
+    {
+      "id": "CVE-2021-23337",
+      "package": "lodash",
+      "version": "4.17.21",
+      "severity": "high",
+      "cvss_score": 7.5,
+      "title": "Lodash vulnerable to Prototype Pollution",
+      "description": "Lodash versions before 4.17.21 are vulnerable to Prototype Pollution when using the assignIn, extend, merge, or defaultsDeep functions with untrusted source objects.",
+      "affected_versions": [
+        "<4.17.21"
+      ],
+      "fixed_version": "4.17.21",
+      "cve_url": "https://nvd.nist.gov/vuln/detail/CVE-2021-23337",
+      "references": [
+        "https://github.com/lodash/lodash/security/advisories/GHSA-35jh-r3h4-6jhm"
+      ]
+    },
+    {
+      "id": "CVE-2021-3129",
+      "package": "numpy",
+      "version": "1.21.0",
+      "severity": "high",
+      "cvss_score": 8.1,
+      "title": "NumPy Buffer Overflow",
+      "description": "A buffer overflow vulnerability exists in NumPy's pickle deserialization code which could lead to arbitrary code execution.",
+      "affected_versions": [
+        "<1.21.2"
+      ],
+      "fixed_version": "1.21.2",
+      "cve_url": "https://nvd.nist.gov/vuln/detail/CVE-2021-3129",
+      "references": [
+        "https://github.com/numpy/numpy/security/advisories"
+      ]
+    },
+    {
+      "id": "CVE-2021-25919",
+      "package": "pandas",
+      "version": "1.3.0",
+      "severity": "high",
+      "cvss_score": 7.5,
+      "title": "Pandas Code Injection via eval()",
+      "description": "Pandas eval() function can execute arbitrary Python code when evaluating user-supplied strings.",
+      "affected_versions": [
+        "<1.3.2"
+      ],
+      "fixed_version": "1.3.2",
+      "cve_url": "https://nvd.nist.gov/vuln/detail/CVE-2021-25919",
+      "references": [
+        "https://github.com/pandas-dev/pandas/security/advisories"
+      ]
+    },
+    {
+      "id": "CVE-2020-26217",
+      "package": "scipy",
+      "version": "1.7.0",
+      "severity": "medium",
+      "cvss_score": 6.5,
+      "title": "SciPy Insecure Randomness",
+      "description": "SciPy uses weak random number generation which could lead to predictable results in security-sensitive operations.",
+      "affected_versions": [
+        "<1.7.1"
+      ],
+      "fixed_version": "1.7.1",
+      "cve_url": "https://nvd.nist.gov/vuln/detail/CVE-2020-26217",
+      "references": [
+        "https://github.com/scipy/scipy/security/advisories"
+      ]
+    }
+  ],
+  "security_issues": [
+    {
+      "type": "eval_usage",
+      "severity": "critical",
+      "file": "repo_testing/flow.py",
+      "line": 8,
+      "code": "result = eval(user_data)",
+      "description": "Direct use of eval() with user-supplied input can lead to arbitrary code execution",
+      "remediation": "Use ast.literal_eval() for safe evaluation of literal expressions only"
+    },
+    {
+      "type": "pickle_deserialization",
+      "severity": "critical",
+      "file": "repo_testing/flow.py",
+      "line": 12,
+      "code": "return pickle.loads(data)",
+      "description": "Using pickle.loads() on untrusted data can execute arbitrary code",
+      "remediation": "Use safer serialization methods like JSON for untrusted input"
+    },
+    {
+      "type": "command_injection",
+      "severity": "critical",
+      "file": "repo_testing/flow.py",
+      "line": 16,
+      "code": "subprocess.call(cmd, shell=True)",
+      "description": "Using shell=True in subprocess calls is vulnerable to shell injection attacks",
+      "remediation": "Use subprocess.run() with shell=False and pass arguments as a list"
+    },
+    {
+      "type": "os_system_usage",
+      "severity": "critical",
+      "file": "repo_testing/flow.py",
+      "line": 20,
+      "code": "os.system(command)",
+      "description": "os.system() is vulnerable to command injection",
+      "remediation": "Use subprocess.run() instead"
+    },
+    {
+      "type": "exec_usage",
+      "severity": "critical",
+      "file": "repo_testing/flow.py",
+      "line": 24,
+      "code": "exec(code_string)",
+      "description": "Direct use of exec() with user input allows arbitrary code execution",
+      "remediation": "Avoid exec() - use ast.literal_eval() or safer alternatives"
+    },
+    {
+      "type": "sql_injection",
+      "severity": "critical",
+      "file": "repo_testing/flow.py",
+      "line": 28,
+      "code": "query = f\"SELECT * FROM users WHERE id={user_id}\"",
+      "description": "SQL query built with string concatenation is vulnerable to injection attacks",
+      "remediation": "Use parameterized queries with proper parameter binding"
+    },
+    {
+      "type": "template_injection",
+      "severity": "high",
+      "file": "repo_testing/flow.py",
+      "line": 33,
+      "code": "return render_template_string(user_input)",
+      "description": "Rendering user input as template string can lead to Server-Side Template Injection (SSTI)",
+      "remediation": "Never render user input as template - use template escaping"
+    },
+    {
+      "type": "weak_random",
+      "severity": "high",
+      "file": "repo_testing/flow.py",
+      "line": 38,
+      "code": "return random.randint(0, 999999)",
+      "description": "Using random module for security-sensitive operations is not cryptographically secure",
+      "remediation": "Use secrets module for cryptographic randomness"
+    },
+    {
+      "type": "missing_timeout",
+      "severity": "medium",
+      "file": "repo_testing/flow.py",
+      "line": 43,
+      "code": "r = requests.get(url)",
+      "description": "Missing timeout parameter in requests.get() can cause the application to hang indefinitely",
+      "remediation": "Always add timeout parameter: requests.get(url, timeout=10)"
+    },
+    {
+      "type": "hardcoded_credentials",
+      "severity": "critical",
+      "file": "repo_testing/flow.py",
+      "line": 46,
+      "code": "DB_PASSWORD = \"admin123\"",
+      "description": "Hardcoded database credentials expose sensitive information",
+      "remediation": "Use environment variables or secrets management services"
+    },
+    {
+      "type": "hardcoded_secrets",
+      "severity": "critical",
+      "file": "repo_testing/flow.py",
+      "line": 47,
+      "code": "API_KEY = \"sk-1234567890abcdef\"",
+      "description": "Hardcoded API keys expose sensitive credentials",
+      "remediation": "Store secrets in environment variables or a secrets vault"
+    },
+    {
+      "type": "debug_enabled",
+      "severity": "high",
+      "file": "repo_testing/flow.py",
+      "line": 51,
+      "code": "app.run(debug=True)",
+      "description": "Running Flask app with debug=True in production exposes sensitive information and enables remote code execution",
+      "remediation": "Set debug=False in production environments"
+    },
+    {
+      "type": "dangerouslySetInnerHTML",
+      "severity": "high",
+      "file": "repo_testing/utils.js",
+      "line": 10,
+      "code": "dangerouslySetInnerHTML={{ __html: props.userBio }}",
+      "description": "Using dangerouslySetInnerHTML with user input is vulnerable to XSS attacks",
+      "remediation": "Avoid dangerouslySetInnerHTML - render as text content instead"
+    },
+    {
+      "type": "sql_injection",
+      "severity": "critical",
+      "file": "repo_testing/utils.js",
+      "line": 18,
+      "code": "const query = `SELECT * FROM users WHERE id = ${userId}`;",
+      "description": "SQL query built with template literals is vulnerable to injection",
+      "remediation": "Use prepared statements with parameterized queries"
+    },
+    {
+      "type": "eval_usage",
+      "severity": "critical",
+      "file": "repo_testing/utils.js",
+      "line": 26,
+      "code": "return eval(data);",
+      "description": "Direct use of eval() with user data allows arbitrary code execution",
+      "remediation": "Use safer alternatives like JSON.parse() or Function constructor with restrictions"
+    },
+    {
+      "type": "innerHTML_injection",
+      "severity": "high",
+      "file": "repo_testing/utils.js",
+      "line": 31,
+      "code": "document.getElementById('content').innerHTML = userContent;",
+      "description": "Using innerHTML with user input is vulnerable to XSS attacks",
+      "remediation": "Use textContent instead or use a DOMParser with proper validation"
+    },
+    {
+      "type": "function_constructor",
+      "severity": "critical",
+      "file": "repo_testing/utils.js",
+      "line": 36,
+      "code": "return new Function(code)();",
+      "description": "Using Function constructor with user input allows arbitrary code execution",
+      "remediation": "Avoid dynamic code execution - use pre-compiled functions"
+    },
+    {
+      "type": "weak_random",
+      "severity": "high",
+      "file": "repo_testing/utils.js",
+      "line": 41,
+      "code": "return Math.random().toString(36).substring(2, 15);",
+      "description": "Using Math.random for security-sensitive operations is not cryptographically secure",
+      "remediation": "Use crypto.getRandomValues() for secure random generation"
+    },
+    {
+      "type": "hardcoded_secrets",
+      "severity": "critical",
+      "file": "repo_testing/utils.js",
+      "line": 45,
+      "code": "const API_KEY = 'sk-1234567890abcdefghijklmnop';",
+      "description": "Hardcoded API key exposed in source code",
+      "remediation": "Use environment variables to store secrets"
+    },
+    {
+      "type": "xss_via_attribute",
+      "severity": "high",
+      "file": "repo_testing/utils.js",
+      "line": 56,
+      "code": "res.send(`<a href=\"${url}\">Click here</a>`);",
+      "description": "User input directly in HTML attribute vulnerable to XSS",
+      "remediation": "Use HTML templating engines with auto-escaping"
+    },
+    {
+      "type": "unsafe_json_parse",
+      "severity": "medium",
+      "file": "repo_testing/utils.js",
+      "line": 63,
+      "code": "const data = JSON.parse(req.body);",
+      "description": "JSON.parse without validation on potentially malicious input",
+      "remediation": "Validate and sanitize input before parsing"
+    }
+  ],
+  "summary": {
+    "total_vulnerabilities": 22,
+    "critical": 14,
+    "high": 6,
+    "medium": 2,
+    "low": 0,
+    "packages_affected": 4,
+    "files_affected": 2
+  }
+}
