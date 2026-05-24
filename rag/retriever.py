@@ -16,8 +16,11 @@ class VulnerabilityRetriever:
         self.metadata = self.df[['pattern', 'language', 'fixed_code', 'vulnerable_code']].to_dict('records')
         
         # Load embedding model (for encoding user queries)
-        self.encoder = SentenceTransformer("BAAI/bge-large-en-v1.5", device="cuda")
-        
+        self.encoder = SentenceTransformer(
+                "BAAI/bge-small-en-v1.5",
+                device="cpu"
+            )
+                    
         # Build Chroma collection
         self.client = chromadb.Client()
         self.collection = self.client.create_collection(

@@ -16,7 +16,7 @@ class OllamaClient:
             "stream": False,
             "options": {
                 "num_predict": 1024,  # limit output length
-                "temperature": 0.2,  # lower randomness
+                "temperature": 0.0,  # lower randomness
             },
         }
         for attempt in range(max_retries + 1):
