@@ -239,7 +239,21 @@ class VendoredScanner:
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:
             output_file = tmp.name
 
-        file_list = [str(f.relative_to(base_dir)) for f in files_to_scan]
+        # Filter files that are actually under base_dir
+        valid_files = []
+        for f in files_to_scan:
+            try:
+                f.relative_to(base_dir)
+                valid_files.append(f)
+            except ValueError:
+                # File is not under base_dir, skip it
+                logger.debug(f"Skipping file not under project root: {f}")
+                continue
+        
+        if not valid_files:
+            return cached_matches
+        
+        file_list = [str(f.relative_to(base_dir)) for f in valid_files]
         try:
             raw, parsed = run_scan(
                 file_list=file_list,
