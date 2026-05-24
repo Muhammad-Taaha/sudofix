@@ -203,10 +203,11 @@ def print_results(results: Dict[str, Any], verbose: bool = False):
             if vulnerabilities:
                 print(f"\n  ⚠️  Vulnerabilities ({len(vulnerabilities)}):")
                 for vuln in vulnerabilities[:5]:
-                    pkg = vuln.get("package", "unknown")
+                    pkg = vuln.get("package_name", "unknown")
                     severity = vuln.get("severity", "unknown")
-                    title = vuln.get("title", "No description")
-                    print(f"    • {pkg}: {title} [{severity}]")
+                    desc = vuln.get("description", "No description")
+                    vuln_id = vuln.get("vulnerability_id", "")
+                    print(f"    • {vuln_id} ({pkg}): {desc} [{severity}]")
                 if len(vulnerabilities) > 5:
                     print(f"    ... and {len(vulnerabilities) - 5} more")
             
