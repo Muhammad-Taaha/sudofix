@@ -1,0 +1,6 @@
+id: python-os-system
+message: "Avoid using os.system() - use subprocess instead"
+severity: critical
+language: Python
+rule:
+  pattern: os.system($$$)

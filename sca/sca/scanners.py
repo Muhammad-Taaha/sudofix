@@ -68,10 +68,8 @@ class LicenseScanner:
         self.quiet = quiet
 
     def scan_directory(self, project_root: str, file_paths: Optional[List[Path]] = None) -> List[LicenseFinding]:
-        if file_paths is None:
-            candidate_files = self._find_candidate_files(project_root)
-        else:
-            candidate_files = list(file_paths)
+        # Always find license files by pattern, not just when file_paths is None
+        candidate_files = self._find_candidate_files(project_root)
 
         files_to_scan = []
         cached_findings = []
@@ -118,14 +116,31 @@ class LicenseScanner:
                 if not os.path.exists(abs_path):
                     continue
 
-                license_expr = file_info.get("detected_license_expression", "")
-                spdx_expr = file_info.get("detected_license_expression_spdx", "")
+                # Get license info from file_info
+                license_expr = file_info.get("detected_license_expression") or ""
+                spdx_expr = file_info.get("detected_license_expression_spdx") or ""
+                
+                # Skip if no licenses detected
+                if not license_expr:
+                    continue
+
+                # Extract confidence and line numbers from license_detections.matches
                 detections = file_info.get("license_detections", [])
-                licenses = file_info.get("licenses", [])
-                all_detections = detections + licenses
-                confidence = max((d.get("score", 0) for d in all_detections), default=0.0)
-                start_line = all_detections[0].get("start_line", 0) if all_detections else 0
-                end_line = all_detections[0].get("end_line", 0) if all_detections else 0
+                confidence = 0.0
+                start_line = 0
+                end_line = 0
+                
+                if detections:
+                    # Get the first match from the first detection's matches
+                    for detection in detections:
+                        matches = detection.get("matches", [])
+                        if matches:
+                            first_match = matches[0]
+                            confidence = max(confidence, first_match.get("score", 0.0))
+                            if start_line == 0:
+                                start_line = first_match.get("start_line", 0)
+                                end_line = first_match.get("end_line", 0)
+
                 copyrights = file_info.get("copyrights", [])
                 holders = [c.get("holder", "") for c in copyrights if "holder" in c]
 
@@ -224,7 +239,21 @@ class VendoredScanner:
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:
             output_file = tmp.name
 
-        file_list = [str(f.relative_to(base_dir)) for f in files_to_scan]
+        # Filter files that are actually under base_dir
+        valid_files = []
+        for f in files_to_scan:
+            try:
+                f.relative_to(base_dir)
+                valid_files.append(f)
+            except ValueError:
+                # File is not under base_dir, skip it
+                logger.debug(f"Skipping file not under project root: {f}")
+                continue
+        
+        if not valid_files:
+            return cached_matches
+        
+        file_list = [str(f.relative_to(base_dir)) for f in valid_files]
         try:
             raw, parsed = run_scan(
                 file_list=file_list,

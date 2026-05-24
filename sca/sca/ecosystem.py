@@ -37,7 +37,9 @@ def detect_manifests(root_dir: str | Path) -> Dict[str, List[str]]:
     root = Path(root_dir).resolve()
     ecosystem_files: Dict[str, List[str]] = {}
 
-    for dirpath, _, filenames in os.walk(root):
+    for dirpath, dirnames, filenames in os.walk(root):
+        # Prune ignored directories to avoid massive scans
+        dirnames[:] = [d for d in dirnames if d not in {".git", ".venv", "venv", "node_modules", ".mypy_cache", ".pytest_cache"}]
         for fname in filenames:
             if fname in ECOSYSTEM_MANIFESTS:
                 eco, _ = ECOSYSTEM_MANIFESTS[fname]
@@ -54,7 +56,9 @@ def detect_sub_projects(root_dir: str | Path) -> List[Path]:
     """
     root = Path(root_dir).resolve()
     dirs_with_manifests = set()
-    for dirpath, _, filenames in os.walk(root):
+    for dirpath, dirnames, filenames in os.walk(root):
+        # Prune ignored directories to avoid massive scans
+        dirnames[:] = [d for d in dirnames if d not in {".git", ".venv", "venv", "node_modules", ".mypy_cache", ".pytest_cache"}]
         if any(f in MANIFEST_FILENAMES for f in filenames):
             dirs_with_manifests.add(Path(dirpath).resolve())
     # Sort by path depth descending so inner projects come first (optional)

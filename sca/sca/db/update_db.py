@@ -27,7 +27,8 @@ from sca.utils import get_logger
 logger = get_logger(__name__)
 
 DB_PATH_DEFAULT = Path(__file__).resolve().parent / "vulnerabilities.db"
-OSV_DATA_URL = "https://osv.dev/data/export/osv_data.zip"
+# OSV.dev no longer provides export.zip - use GitHub releases instead
+OSV_DATA_URL = "https://github.com/google/osv.dev/releases/download/2024-07-01/all.json"
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS packages (
@@ -95,7 +96,6 @@ def download_dump(dest_dir: Path) -> Path:
 def extract_dump(zip_path: Path, extract_to: Path) -> Path:
     with zipfile.ZipFile(zip_path, "r") as zf:
         zf.extractall(extract_to)
-    # The extracted folder is usually named "osv_data"
     return extract_to / "osv_data"
 
 def import_osv_json(json_file: Path, conn: sqlite3.Connection):
@@ -113,7 +113,6 @@ def import_osv_json(json_file: Path, conn: sqlite3.Connection):
     cvss_score = None
     cvss_vector = None
 
-    # Extract severity and CVSS from database_specific
     for db_entry in data.get("database_specific", {}).get("severity", []):
         if db_entry.get("type") == "CVSS_V3":
             cvss_vector = db_entry.get("score", "")
@@ -125,7 +124,7 @@ def import_osv_json(json_file: Path, conn: sqlite3.Connection):
     if cvss_vector:
         try:
             c = CVSS3(cvss_vector)
-            cvss_score = c.scores()[0]  # base score
+            cvss_score = c.scores()[0]
             if cvss_score >= 9.0:
                 severity = "CRITICAL"
             elif cvss_score >= 7.0:
@@ -150,7 +149,6 @@ def import_osv_json(json_file: Path, conn: sqlite3.Connection):
         (vuln_id, summary, details, severity, cvss_score, cvss_vector, published, modified),
     )
 
-    # Process affected packages
     for affected in data.get("affected", []):
         pkg_info = affected.get("package", {})
         pkg_name = pkg_info.get("name", "")
@@ -168,7 +166,6 @@ def import_osv_json(json_file: Path, conn: sqlite3.Connection):
             "SELECT id FROM packages WHERE name=? AND ecosystem=?", (pkg_name, ecosystem)
         ).fetchone()[0]
 
-        # Process ranges
         introduced = None
         fixed = None
         for rng in affected.get("ranges", []):
@@ -177,13 +174,11 @@ def import_osv_json(json_file: Path, conn: sqlite3.Connection):
                     introduced = event["introduced"]
                 if event.get("fixed"):
                     fixed = event["fixed"]
-            # Insert package_vulnerability (one per range)
             conn.execute(
                 "INSERT OR IGNORE INTO package_vulnerabilities(package_id, vulnerability_id, fixed_version, introduced_version) "
                 "VALUES(?,?,?,?)",
                 (package_id, vuln_id, fixed, introduced),
             )
-        # If no ranges, just link
         if not affected.get("ranges"):
             conn.execute(
                 "INSERT OR IGNORE INTO package_vulnerabilities(package_id, vulnerability_id) VALUES(?,?)",

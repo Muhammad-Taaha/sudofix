@@ -1,0 +1,6 @@
+id: python-pickle-loads
+message: "Avoid using pickle.loads() with untrusted data"
+severity: critical
+language: Python
+rule:
+  pattern: pickle.loads($$$)

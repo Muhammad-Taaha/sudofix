@@ -1,0 +1,6 @@
+id: python-exec
+message: "Avoid using exec() with user input"
+severity: critical
+language: Python
+rule:
+  pattern: exec($$$)

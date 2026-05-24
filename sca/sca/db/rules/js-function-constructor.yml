@@ -1,0 +1,6 @@
+id: js-function-constructor
+message: "Avoid using Function constructor with dynamic code"
+severity: critical
+language: JavaScript
+rule:
+  pattern: new Function($$$)

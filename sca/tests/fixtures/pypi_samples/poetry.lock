@@ -1,0 +1,8 @@
+[[package]]
+name = "flask"
+version = "2.0.1"
+dependencies = {click = ">=8.0", "itsdangerous" = ">=2.0"}
+
+[[package]]
+name = "click"
+version = "8.0.1"
