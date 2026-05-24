@@ -2,6 +2,7 @@ import os
 import argparse
 import hashlib
 import sys
+import json
 
 from cli_agent.cli_agent import CliAgent
 from controllers.data_base_controller import Postgres
@@ -11,20 +12,40 @@ from controllers.repo_scanner import RepoScanner
 from sastscanner.taint.taint_engine import TaintEngine
 from sastscanner.core.rule_engine import RuleEngine
 
-# ========== SCA Integration (pure Python wrapper) ==========
-# ========== SCA Integration (pure Python wrapper) ==========
+# ========== SCA Integration ==========
 SCA_AVAILABLE = False
 try:
-    import sys
-    # Add the top‑level sca/ directory (where sca_simple.py lives)
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'sca'))
     from sca_simple import scan_dependencies
     SCA_AVAILABLE = True
     print("✅ SCA simple scanner loaded")
 except ImportError as e:
     print(f"⚠️ SCA simple scanner not found – SCA disabled (error: {e})")
-# ============================================================
-# ============================================================
+# =====================================
+
+# ========== Helper: emit finding to TUI ==========
+def emit_finding(severity: str, type_: str, file_path: str,
+                 start_line: int, end_line: int, description: str,
+                 original_code: str = "", fix_suggestion: str = ""):
+    findings_file = os.environ.get("SUDOFIX_FINDINGS_FILE")
+    if not findings_file:
+        return
+    try:
+        with open(findings_file, "a") as f:
+            json.dump({
+                "severity": severity,
+                "type": type_,
+                "file": file_path,
+                "start_line": start_line,
+                "end_line": end_line,
+                "description": description,
+                "original_code": original_code,
+                "fix_suggestion": fix_suggestion
+            }, f)
+            f.write("\n")
+    except Exception:
+        pass
+# =================================================
 
 def debug(title, data=None):
     print(f"\n🧪 [{title}]")
@@ -45,15 +66,23 @@ def inspect_nodes(nodes):
     return True
 
 def run_sca_only(repo_path, command, db, redis_client):
-    """Run only SCA analysis using the simple scanner and produce report."""
     print("\n📦 Running SCA only (using simple scanner)...")
     sca_vulns = []
     try:
-        # scan_dependencies returns a list of dicts directly
         sca_vulns = scan_dependencies(repo_path)
         print(f"✅ SCA found {len(sca_vulns)} vulnerable dependencies")
         if sca_vulns:
-            # Generate report
+            for v in sca_vulns:
+                emit_finding(
+                    severity=v.get("severity", "MEDIUM"),
+                    type_="SCA",
+                    file_path=v.get("file_path", "unknown"),
+                    start_line=1,
+                    end_line=1,
+                    description=f"{v['package']} {v['version']} : {v['cve']}",
+                    original_code="",
+                    fix_suggestion=f"Upgrade {v['package']} to version {v.get('fixed_version', 'latest')}"
+                )
             report_lines = ["# SCA Vulnerability Report\n"]
             for v in sca_vulns:
                 report_lines.append(
@@ -62,7 +91,6 @@ def run_sca_only(repo_path, command, db, redis_client):
                 )
             sca_text = "\n".join(report_lines)
             print("\n" + sca_text)
-            # Save to file
             with open("sca_report.md", "w") as f:
                 f.write(sca_text)
         else:
@@ -71,7 +99,6 @@ def run_sca_only(repo_path, command, db, redis_client):
         print(f"❌ SCA error: {e}")
 
 def run_sast_pipeline(repo_path, command, db, redis_client, sca_vulns=None):
-    """Run the full SAST pipeline (taint + rules + LLM) on code chunks."""
     print("\n🔄 Syncing repo for SAST...")
     db.sync_repo_to_db(repo_path)
 
@@ -117,27 +144,78 @@ def run_sast_pipeline(repo_path, command, db, redis_client, sca_vulns=None):
             continue
 
         # Taint analysis
+        taint_findings = []
         try:
-            taint_findings = taint_engine.analyze(nodes, language=language) or []
+            taint_result = taint_engine.analyze(nodes, language=language)
+            # taint_result might be list of dicts or list of objects
+            if taint_result:
+                for item in taint_result:
+                    if isinstance(item, dict):
+                        taint_findings.append(item)
+                    else:
+                        # Convert object to dict if needed
+                        taint_findings.append({
+                            "severity": getattr(item, "severity", "HIGH"),
+                            "line": getattr(item, "line", chunk.get("start_line", 1)),
+                            "end_line": getattr(item, "end_line", chunk.get("end_line", 1)),
+                            "message": getattr(item, "message", str(item)),
+                            "fix_suggestion": getattr(item, "fix_suggestion", "")
+                        })
         except Exception as e:
             print("❌ Taint error:", e)
-            taint_findings = []
 
         # Rule engine
+        rule_findings = []
         try:
-            rule_findings = rule_engine.scan(
+            rule_result = rule_engine.scan(
                 chunk,
                 context={
                     "language": language,
                     "taint_findings": taint_findings,
                     "taint_vars": getattr(taint_engine, "state", None),
                 }
-            ) or []
+            )
+            if rule_result:
+                for item in rule_result:
+                    if isinstance(item, dict):
+                        rule_findings.append(item)
+                    else:
+                        rule_findings.append({
+                            "severity": getattr(item, "severity", "MEDIUM"),
+                            "rule_id": getattr(item, "rule_id", "Unknown"),
+                            "line": getattr(item, "line", chunk.get("start_line", 1)),
+                            "end_line": getattr(item, "end_line", chunk.get("end_line", 1)),
+                            "message": getattr(item, "message", str(item)),
+                            "fix_suggestion": getattr(item, "fix_suggestion", "")
+                        })
         except Exception as e:
             print("❌ Rule engine error:", e)
-            rule_findings = []
 
-        security_findings = taint_findings + rule_findings
+        # Emit taint findings
+        for finding in taint_findings:
+            emit_finding(
+                severity=finding.get("severity", "HIGH"),
+                type_="Taint",
+                file_path=file_path,
+                start_line=finding.get("line", chunk.get("start_line", 1)),
+                end_line=finding.get("end_line", chunk.get("end_line", 1)),
+                description=finding.get("message", "Potential tainted data flow"),
+                original_code=chunk.get("content", ""),
+                fix_suggestion=finding.get("fix_suggestion", "")
+            )
+
+        # Emit rule findings
+        for finding in rule_findings:
+            emit_finding(
+                severity=finding.get("severity", "MEDIUM"),
+                type_=finding.get("rule_id", "Rule"),
+                file_path=file_path,
+                start_line=finding.get("line", chunk.get("start_line", 1)),
+                end_line=finding.get("end_line", chunk.get("end_line", 1)),
+                description=finding.get("message", "Rule violation"),
+                original_code=chunk.get("content", ""),
+                fix_suggestion=finding.get("fix_suggestion", "")
+            )
 
         # SCA context for this chunk (if available)
         chunk_sca = None
@@ -152,18 +230,18 @@ def run_sast_pipeline(repo_path, command, db, redis_client, sca_vulns=None):
                 chunk_sca = {"summary": f"SCA found {len(sca_vulns)} vulnerable dependencies"}
         chunk['sca_context'] = chunk_sca
 
-        # LLM step
+        # LLM step (optional)
         result = None
-        try:
-            if security_findings or len(nodes) > 5 or chunk_sca:
+        if (taint_findings or rule_findings or len(nodes) > 5 or chunk_sca):
+            try:
                 if command == "review":
                     result = agent.review_code(chunk)
                 elif command == "test":
                     result = agent.generate_test(chunk)
                 elif command == "doc":
                     result = agent.generate_documentation(chunk)
-        except Exception as e:
-            print("❌ LLM error:", e)
+            except Exception as e:
+                print("❌ LLM error:", e)
 
         print("\n🤖 [LLM RESULT]", bool(result))
 
@@ -173,16 +251,12 @@ def run_sast_pipeline(repo_path, command, db, redis_client, sca_vulns=None):
             content_hash = hashlib.sha256(f"{command}:{content}".encode()).hexdigest()
             redis_client.set(content_hash, "done", ex=86400)
 
-    # Final SCA summary if both SAST and SCA were run
     if sca_vulns and command == "review":
         print("\n📦 SCA Findings Summary (from earlier):")
         for v in sca_vulns[:5]:
             print(f"  - {v['package']} {v['version']} : {v['cve']}")
 
 def run_llm(repo_path: str, command: str, mode: str):
-    """
-    mode: 'sast', 'sca', or 'full'
-    """
     print(f"\n🚀 Starting pipeline | Mode: {mode.upper()} | Command: {command}")
 
     db = Postgres()
@@ -194,15 +268,13 @@ def run_llm(repo_path: str, command: str, mode: str):
         return
 
     try:
-        # SCA‑only mode
         if mode == 'sca':
             if not SCA_AVAILABLE:
-                print("❌ SCA not available. Install sca_simple.py and required tools.")
+                print("❌ SCA not available.")
                 return
             run_sca_only(repo_path, command, db, redis_client)
             return
 
-        # For SAST or full, we may need SCA results
         sca_vulns = None
         if mode == 'full' and SCA_AVAILABLE:
             print("\n📦 Running SCA before SAST (simple scanner)...")
@@ -212,7 +284,6 @@ def run_llm(repo_path: str, command: str, mode: str):
             except Exception as e:
                 print(f"❌ SCA error (continuing without SCA): {e}")
 
-        # Run SAST pipeline (with optional SCA context)
         run_sast_pipeline(repo_path, command, db, redis_client, sca_vulns)
 
     except Exception as e:
@@ -223,9 +294,6 @@ def run_llm(repo_path: str, command: str, mode: str):
         redis_client.close()
         print("👋 Done")
 
-# =========================================================
-# CLI + Interactive prompt
-# =========================================================
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("path", nargs="?", default=".")
@@ -243,7 +311,6 @@ if __name__ == "__main__":
         print("❌ Path not found:", path)
         sys.exit(1)
 
-    # Determine mode
     mode = args.mode
     if mode is None:
         print("\n🔍 What would you like to run?")
