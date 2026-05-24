@@ -2,7 +2,7 @@
 __pycache__/
 *.pyc
 
-
+.zed
 .env
 vector_store/docs.index
 vector_store/metadata.pkl
