@@ -27,7 +27,8 @@ from sca.utils import get_logger
 logger = get_logger(__name__)
 
 DB_PATH_DEFAULT = Path(__file__).resolve().parent / "vulnerabilities.db"
-OSV_DATA_URL = "https://osv.dev/data/export/osv_data.zip"
+# OSV.dev no longer provides export.zip - use GitHub releases instead
+OSV_DATA_URL = "https://github.com/google/osv.dev/releases/download/2024-07-01/all.json"
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS packages (
