@@ -9,7 +9,7 @@ vector_store/metadata.pkl
 dataset/
 <<<<<<< HEAD
 rag/
-
+rag-fix/
 __pycache__/
 *.pyc
 
