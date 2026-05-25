@@ -1,0 +1,904 @@
+vulnerable_code,fixed_code,file,language,pattern,generated_fix,rule_fixed
+"new WirelessType= option.
+-",new WLANInterfaceType= option.,NEWS,Text only,command_injection,"# Generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download",True
+"ISOM_DECREASE_SIZE_NO_ERR(ptr, 18)
+tag_size -= 8;
+
+if (name_size >= (u32)0xFFFFFFFF) {
+GF_LOG(GF_LOG_ERROR, GF_LOG_CONTAINER, (""[iso file] Invalid name_size %lu in xtra\n"", name_size));
+-","ISOM_DECREASE_SIZE_NO_ERR(ptr, 8)
+if ((tag_size < 8) || (tag_size>ptr->size) || (name_size>ptr->size)) {
+ISOM_DECREASE_SIZE_NO_ERR(ptr, 10)
+tag_size -= 8;
+} else {
+prop_size = 0;",src/isomedia/box_code_base.c,c,injection,"# Generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download",True
+"name: Initialize CodeQL
+uses: github/codeql-action/init@49abf0ba24d0b7953cb586944e918a0b92074c80 # v2.22.4
+name: Autobuild
+uses: github/codeql-action/autobuild@49abf0ba24d0b7953cb586944e918a0b92074c80 # v2.22.4
+name: Perform CodeQL Analysis
+uses: github/codeql-action/analyze@49abf0ba24d0b7953cb586944e918a0b92074c80 # v2.22.4
+-","uses: github/codeql-action/init@74483a38d39275f33fcff5f35b679b5ca4a26a99 # v2.22.5
+uses: github/codeql-action/autobuild@74483a38d39275f33fcff5f35b679b5ca4a26a99 # v2.22.5
+uses: github/codeql-action/analyze@74483a38d39275f33fcff5f35b679b5ca4a26a99 # v2.22.5",workflows/codeql-analysis.yml b/.github/workflows/codeql-analysis.yml,Objective-C,injection,"# Generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download",True
+"Don't conflate 0 and undefined when checking if a field of an
+Treat NaN and Infinity values the same way as values of invalid
+if (opts.chunkSize) {
+if (opts.windowBits) {
+if (opts.level) {
+if (opts.memLevel) {
+if (opts.strategy && isInvalidStrategy(opts.strategy))
+if (opts.dictionary) {
+if (typeof opts.level === 'number') level = opts.level;
+if (typeof opts.strategy === 'number') strategy = opts.strategy;
+this._handle.init(opts.windowBits || constants.Z_DEFAULT_WINDOWBITS,
+opts.memLevel || constants.Z_DEFAULT_MEMLEVEL,
+if (ctx->err_ != Z_OK) {
+ZCtx::Error(ctx, ""Init error"");
+}
+
+
+-","**Note:** The zlib library rejects requests for 256-byte windows (i.e.,
+`{ windowBits: 8 }` in `options`). An `Error` will be thrown when creating
+a [DeflateRaw][] object with this specific value of the `windowBits` option.
+
+if (opts.chunkSize !== undefined) {
+if (opts.windowBits !== undefined) {
+if (opts.level !== undefined) {
+if (opts.memLevel !== undefined) {
+if (opts.strategy !== undefined && isInvalidStrategy(opts.strategy))
+if (opts.dictionary !== undefined) {
+if (Number.isFinite(opts.level)) {
+level = opts.level;
+}
+if (Number.isFinite(opts.strategy)) {
+strategy = opts.strategy;
+}
+
+var windowBits = constants.Z_DEFAULT_WINDOWBITS;
+if (Number.isFinite(opts.windowBits)) {
+windowBits = opts.windowBits;
+}
+
+var memLevel = constants.Z_DEFAULT_MEMLEVEL;
+if (Number.isFinite(opts.memLevel)) {
+memLevel = opts.memLevel;
+}
+this._handle.init(windowBits,
+memLevel,
+
+if (ctx->err_ != Z_OK) {
+if (dictionary != nullptr) {
+delete[] dictionary;
+ctx->dictionary_ = nullptr;
+}
+ctx->env()->ThrowError(""Init error"");
+}
+'use strict';
+
+require('../common');
+
+const assert = require('assert');
+const zlib = require('zlib');
+
+// For raw deflate encoding, requests for 256-byte windows are rejected as
+// invalid by zlib.
+// (http://zlib.net/manual.html#Advanced)
+assert.throws(() => {
+zlib.createDeflateRaw({ windowBits: 8 });
+}, /^Error: Init error$/);
+
+// Regression tests for bugs in the validation logic.
+
+assert.throws(() => {
+zlib.createGzip({ chunkSize: 0 });
+}, /^RangeError: Invalid chunk size: 0$/);
+
+assert.throws(() => {
+zlib.createGzip({ windowBits: 0 });
+}, /^RangeError: Invalid windowBits: 0$/);
+
+assert.throws(() => {
+zlib.createGzip({ memLevel: 0 });
+}, /^RangeError: Invalid memLevel: 0$/);
+
+{
+const stream = zlib.createGzip({ level: NaN });
+assert.strictEqual(stream._level, zlib.constants.Z_DEFAULT_COMPRESSION);
+}
+
+{
+const stream = zlib.createGzip({ strategy: NaN });
+assert.strictEqual(stream._strategy, zlib.constants.Z_DEFAULT_STRATEGY);
+}",test/parallel/test-zlib-failed-init.js,javascript,resource,"# Generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download",True
+"# There is no hostname validation when DEBUG=True
+if settings.DEBUG:
+return host
+if domain and validate_host(domain, settings.ALLOWED_HOSTS):
+When :setting:`DEBUG` is ``True`` or when running tests, host validation is
+disabled; any host will be accepted. Thus it's usually only necessary to set it
+in production.
+@override_settings(DEBUG=True)
+def test_host_validation_disabled_in_debug_mode(self):
+""""""If ALLOWED_HOSTS is empty and DEBUG is True, all hosts pass.""""""
+request = HttpRequest()
+request.META = {
+'HTTP_HOST': 'example.com',
+}
+self.assertEqual(request.get_host(), 'example.com')
+# Invalid hostnames would normally raise a SuspiciousOperation,
+# but we have DEBUG=True, so this check is disabled.
+request = HttpRequest()
+request.META = {
+'HTTP_HOST': ""invalid_hostname.com"",
+}
+self.assertEqual(request.get_host(), ""invalid_hostname.com"")
+-","# Allow variants of localhost if ALLOWED_HOSTS is empty and DEBUG=True.
+allowed_hosts = settings.ALLOWED_HOSTS
+if settings.DEBUG and not allowed_hosts:
+allowed_hosts = ['localhost', '127.0.0.1', '[::1]']
+if domain and validate_host(domain, allowed_hosts):
+When :setting:`DEBUG` is ``True`` and ``ALLOWED_HOSTS`` is empty, the host
+is validated against ``['localhost', '127.0.0.1', '[::1]']``.
+.. versionchanged:: 1.10.3
+
+In older versions, ``ALLOWED_HOSTS`` wasn't checked if ``DEBUG=True``.
+This was also changed in Django 1.9.11 and 1.8.16 to prevent a
+DNS rebinding attack.
+
+DNS rebinding vulnerability when ``DEBUG=True``
+===============================================
+
+Older versions of Django don't validate the ``Host`` header against
+``settings.ALLOWED_HOSTS`` when ``settings.DEBUG=True``. This makes them
+vulnerable to a `DNS rebinding attack
+<http://benmmurphy.github.io/blog/2016/07/11/rails-webconsole-dns-rebinding/>`_.
+
+While Django doesn't ship a module that allows remote code execution, this is
+at least a cross-site scripting vector, which could be quite serious if
+developers load a copy of the production database in development or connect to
+some production services for which there's no development instance, for
+example. If a project uses a package like the ``django-debug-toolbar``, then
+the attacker could execute arbitrary SQL, which could be especially bad if the
+developers connect to the database with a superuser account.
+
+``settings.ALLOWED_HOSTS`` is now validated regardless of ``DEBUG``. For
+convenience, if ``ALLOWED_HOSTS`` is empty and ``DEBUG=True``, the following
+variations of localhost are allowed ``['localhost', '127.0.0.1', '::1']``. If
+your local settings file has your production ``ALLOWED_HOSTS`` value, you must
+now omit it to get those fallback values.
+
+
+DNS rebinding vulnerability when ``DEBUG=True``
+===============================================
+
+Older versions of Django don't validate the ``Host`` header against
+``settings.ALLOWED_HOSTS`` when ``settings.DEBUG=True``. This makes them
+vulnerable to a `DNS rebinding attack
+<http://benmmurphy.github.io/blog/2016/07/11/rails-webconsole-dns-rebinding/>`_.
+
+While Django doesn't ship a module that allows remote code execution, this is
+at least a cross-site scripting vector, which could be quite serious if
+developers load a copy of the production database in development or connect to
+some production services for which there's no development instance, for
+example. If a project uses a package like the ``django-debug-toolbar``, then
+the attacker could execute arbitrary SQL, which could be especially bad if the
+developers connect to the database with a superuser account.
+
+``settings.ALLOWED_HOSTS`` is now validated regardless of ``DEBUG``. For
+convenience, if ``ALLOWED_HOSTS`` is empty and ``DEBUG=True``, the following
+variations of localhost are allowed ``['localhost', '127.0.0.1', '::1']``. If
+your local settings file has your production ``ALLOWED_HOSTS`` value, you must
+now omit it to get those fallback values.
+
+DNS rebinding vulnerability when ``DEBUG=True``
+===============================================
+
+Older versions of Django don't validate the ``Host`` header against
+``settings.ALLOWED_HOSTS`` when ``settings.DEBUG=True``. This makes them
+vulnerable to a `DNS rebinding attack
+<http://benmmurphy.github.io/blog/2016/07/11/rails-webconsole-dns-rebinding/>`_.
+
+While Django doesn't ship a module that allows remote code execution, this is
+at least a cross-site scripting vector, which could be quite serious if
+developers load a copy of the production database in development or connect to
+some production services for which there's no development instance, for
+example. If a project uses a package like the ``django-debug-toolbar``, then
+the attacker could execute arbitrary SQL, which could be especially bad if the
+developers connect to the database with a superuser account.
+
+``settings.ALLOWED_HOSTS`` is now validated regardless of ``DEBUG``. For
+convenience, if ``ALLOWED_HOSTS`` is empty and ``DEBUG=True``, the following
+variations of localhost are allowed ``['localhost', '127.0.0.1', '::1']``. If
+your local settings file has your production ``ALLOWED_HOSTS`` value, you must
+now omit it to get those fallback values.
+@override_settings(DEBUG=True, ALLOWED_HOSTS=['www.example.com'])
+def test_host_validation_in_debug_mode(self):
+""""""
+If ALLOWED_HOSTS is empty and DEBUG is True, variants of localhost are
+allowed.
+""""""
+valid_hosts = ['localhost', '127.0.0.1', '[::1]']
+for host in valid_hosts:
+request = HttpRequest()
+request.META = {'HTTP_HOST': host}
+self.assertEqual(request.get_host(), host)
+# Other hostnames raise a SuspiciousOperation.
+with self.assertRaises(SuspiciousOperation):
+request = HttpRequest()
+request.META = {'HTTP_HOST': 'example.com'}
+request.get_host()",tests/requests/tests.py,python,sql_injection,"# Generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download",True
+"return circle.name;
+return circle.name;
+//return OC.SystemTags.getDescriptiveTag(tag)[0].outerHTML;
+-","
+
+function escapeHTML(text) {
+return text.toString()
+.split('&').join('&amp;')
+.split('<').join('&lt;')
+.split('>').join('&gt;')
+.split('""').join('&quot;')
+.split('\'').join('&#039;')
+}
+
+return escapeHTML(circle.name);
+return escapeHTML(circle.name);",js/files/circles.files.list.js,javascript,xss,"# Generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download",True
+"<a href=""$xwiki.getURL('XWiki.XWikiLogout', 'logout', ""xredirect=$escapetool.url($xwiki.relativeRequestURL)"")"" id=""tmLogout"" rel=""nofollow"">$services.icon.renderHTML('log-out') $escapetool.xml($services.localization.render('logout'))</a>
+XWikiUser xWikiUser = getXWikiContext().getWiki().getAuthService().checkAuth(getXWikiContext());
+XWikiUser xWikiUser = getXWikiContext().getWiki().getAuthService().checkAuth(getXWikiContext());
+return getAuthService().checkAuth(context);
+if (!hasAccess) {
+// User is disabled: the mail address is marked as checked
+} else if (user.isDisabled(context) && user.isEmailChecked(context)) {
+String action = context.getAction();
+/*
+* Allow inactive users to see skins, ressources, SSX, JSX and downloads they could have seen as guest. The
+* rational behind this behaviour is that inactive users should be able to access the same UI that guests
+* are used to see, including custom icons, panels, and so on...
+*/
+if (!((action.equals(""skin"") && (doc.getSpace().equals(""skins"") || doc.getSpace().equals(""resources"")))
+|| ((action.equals(""skin"") || action.equals(""download"") || action.equals(""ssx"") || action.equals(""jsx""))
+&& getRightService().hasAccessLevel(""view"", XWikiRightService.GUEST_USER_FULLNAME,
+doc.getPrefixedFullName(), context))
+|| ((action.equals(""view"") && doc.getFullName().equals(""XWiki.AccountValidation""))))) {
+Object[] args = { user.getUser() };
+setPhonyDocument(reference, context, vcontext);
+throw new XWikiException(XWikiException.MODULE_XWIKI_USER, XWikiException.ERROR_XWIKI_USER_DISABLED,
+""User {0} account is disabled"", null, args);
+}
+// User actually needs to activate his mail address.
+} else if (user.isDisabled(context) && !user.isEmailChecked(context)) {
+boolean allow = false;
+String action = context.getAction();
+/*
+* Allow inactive users to see skins, ressources, SSX, JSX and downloads they could have seen as guest. The
+* rational behind this behaviour is that inactive users should be able to access the same UI that guests
+* are used to see, including custom icons, panels, and so on...
+*/
+if ((action.equals(""skin"") && (doc.getSpace().equals(""skins"") || doc.getSpace().equals(""resources"")))
+|| ((action.equals(""skin"") || action.equals(""download"") || action.equals(""ssx"") || action.equals(""jsx""))
+&& getRightService().hasAccessLevel(""view"", XWikiRightService.GUEST_USER_FULLNAME,
+doc.getPrefixedFullName(), context))
+|| ((action.equals(""view"") && doc.getFullName().equals(""XWiki.AccountValidation"")))) {
+allow = true;
+} else {
+String allowed = getConfiguration().getProperty(""xwiki.inactiveuser.allowedpages"", """");
+if (context.getAction().equals(""view"") && !allowed.equals("""")) {
+String[] allowedList = StringUtils.split(allowed, "" ,"");
+for (String element : allowedList) {
+if (element.equals(doc.getFullName())) {
+allow = true;
+break;
+}
+}
+}
+}
+if (!allow) {
+Object[] args = { context.getUser() };
+setPhonyDocument(reference, context, vcontext);
+throw new XWikiException(XWikiException.MODULE_XWIKI_USER, XWikiException.ERROR_XWIKI_USER_INACTIVE,
+""User {0} account is inactive"", null, args);
+}
+return this.context.getWiki().getAuthService().checkAuth(this.context);
+return this.context.getWiki().getAuthService().checkAuth(username, password, rememberme, this.context);
+if (context.getUserReference() == null && !DELETE_ACTION.equals(action) && !LOGIN_ACTION.equals(action)) {
+-","#define ($logoutLink)
+<a href=""$xwiki.getURL('XWiki.XWikiLogout', 'logout', ""xredirect=$escapetool.url($xwiki.relativeRequestURL)"")"" id=""tmLogout"" rel=""nofollow"">$services.icon.renderHTML('log-out') $escapetool.xml($services.localization.render('logout'))</a>
+#end
+$logoutLink
+#elseif($xcontext.user == 'XWiki.XWikiGuest' && $xcontext.inactiveUserReference)
+<a href=""$xwiki.getURL($xcontext.inactiveUserReference, 'view')"" class=""brand-user"" id=""tmUser"">$!xwiki.getUserName($xcontext.inactiveUserReference, false)</a>
+$logoutLink
+XWikiUser xWikiUser = getXWikiContext().getWiki().checkAuth(getXWikiContext());
+XWikiUser xWikiUser = getXWikiContext().getWiki().checkAuth(getXWikiContext());
+/**
+* Authenticate the user from the context and check if the user is disabled or not.
+* If the user is disabled, the method returns {@code null} but set the reference of the authenticated user in the
+* context with the {@link XWikiContext#INACTIVE_USER_REFERENCE} property.
+*
+* @param context the context used to authenticate the user.
+* @return an {@link XWikiUser} if the user is authenticated and enabled, else {@code null}.
+* @throws XWikiException in case of problem when dealing with the authentication.
+*/
+XWikiUser user = getAuthService().checkAuth(context);
+if (user != null && user.isDisabled(context)) {
+context.put(XWikiContext.INACTIVE_USER_REFERENCE, user.getUserReference());
+user = null;
+}
+return user;
+XWikiUser inactiveUser = null;
+if (context.getUserReference() == null && context.get(XWikiContext.INACTIVE_USER_REFERENCE) != null) {
+inactiveUser = new XWikiUser((DocumentReference) context.get(XWikiContext.INACTIVE_USER_REFERENCE));
+}
+if (inactiveUser != null && context.getAction().equals(""view"")) {
+this.handleInactiveUserViewAction(inactiveUser, context, reference, vcontext);
+}
+else if (!hasAccess) {
+private void handleInactiveUserViewAction(XWikiUser inactiveUser, XWikiContext context, DocumentReference reference,
+VelocityContext vcontext) throws XWikiException
+{
+if (inactiveUser.isEmailChecked(context)) {
+Object[] args = { inactiveUser.getUser() };
+setPhonyDocument(reference, context, vcontext);
+throw new XWikiException(XWikiException.MODULE_XWIKI_USER, XWikiException.ERROR_XWIKI_USER_DISABLED,
+""User {0} account is disabled"", null, args);
+} else if (!reference.getLocalDocumentReference().equals(XWikiUser.ACCOUNT_VALIDATION_DOCUMENT_REFERENCE)) {
+String allowed = getConfiguration().getProperty(""xwiki.inactiveuser.allowedpages"", """");
+boolean allow = false;
+if (!StringUtils.isEmpty(allowed)) {
+XWikiDocument doc = this.getDocument(reference, context);
+String[] allowedList = StringUtils.split(allowed, "" ,"");
+for (String element : allowedList) {
+if (element.equals(doc.getFullName())) {
+allow = true;
+break;
+}
+}
+}
+
+if (!allow) {
+Object[] args = { inactiveUser.getUser() };
+setPhonyDocument(reference, context, vcontext);
+throw new XWikiException(XWikiException.MODULE_XWIKI_USER, XWikiException.ERROR_XWIKI_USER_INACTIVE,
+""User {0} account is inactive"", null, args);
+}
+}
+}
+
+/**
+* The reference of a logged-in inactive user: in such case the context user reference is guest, so we store
+* the actual logged-in user with that key.
+*
+* @since 14.3RC1
+* @since 13.10.5
+*/
+@Unstable
+public static final String INACTIVE_USER_REFERENCE = ""inactiveUserReference"";
+
+return this.context.getWiki().checkAuth(this.context);
+XWikiUser user =
+this.context.getWiki().getAuthService().checkAuth(username, password, rememberme, this.context);
+if (user.isDisabled(this.context)) {
+this.context.put(XWikiContext.INACTIVE_USER_REFERENCE, user.getUserReference());
+user = null;
+}
+return user;
+import org.xwiki.model.reference.LocalDocumentReference;
+public static final LocalDocumentReference ACCOUNT_VALIDATION_DOCUMENT_REFERENCE =
+new LocalDocumentReference(XWiki.SYSTEM_SPACE, ""AccountValidation"");
+
+// Also we don't show the login if an inactive user logged in.
+if (context.getUserReference() == null && !DELETE_ACTION.equals(action) && !LOGIN_ACTION.equals(action)
+&& context.get(XWikiContext.INACTIVE_USER_REFERENCE) == null) {",xwiki-platform-core/xwiki-platform-security/xwiki-platform-security-authorization/xwiki-platform-security-authorization-bridge/src/main/java/org/xwiki/security/authorization/internal/XWikiCachingRightService.java,java,xss,"# Generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download",True
+"add csrf token
+add random int to filenmae
+check for image file suffix
+$suffix = strrchr($_FILES[""file""][""name""],""."");
+$org_name = $timestring . $suffix;
+$img_name = $timestring.""_img.jpg"";
+$tmb_name = $timestring.""_tmb.jpg"";
+if(move_uploaded_file($tmp_name, ""$uploads_dir/$org_name"")) {
+create_thumbs($uploads_dir,$org_name,$img_name, $max_width,$max_height,90);
+create_thumbs($uploads_dir,$img_name,$tmb_name, $max_width_tmb,$max_height_tmb,80);
+unlink(""$uploads_dir/$org_name"");
+print ('Uploaded');
+$b = $original_width / $original_height;
+<h5 class=""modal-title"">Upload into {post_id}</h5>
+<span aria-hidden=""true"">&times;</span>
+-","session_start();
+
+if($_SESSION['user_class'] != ""administrator""){
+header(""location:../index.php"");
+die(""PERMISSION DENIED!"");
+}
+
+require '../../config.php';
+if(is_file('../../'.FC_CONTENT_DIR.'/config.php')) {
+include '../../'.FC_CONTENT_DIR.'/config.php';
+}
+
+if($_POST['csrf_token'] !== $_SESSION['token']) {
+die('Error: CSRF Token is invalid');
+}
+
+
+$random_int = random_int(0, 999);
+$suffix = substr(strrchr($_FILES[""file""][""name""],"".""),1);
+$org_name = $timestring .'.'. $suffix;
+$img_name = $timestring.$random_int.""_img.jpg"";
+$tmb_name = $timestring.$random_int.""_tmb.jpg"";
+
+if(!in_array($suffix, $fc_upload_img_types)) {
+exit;
+} else {
+if(move_uploaded_file($tmp_name, ""$uploads_dir/$org_name"")) {
+create_thumbs($uploads_dir,$org_name,$img_name, $max_width,$max_height,90);
+create_thumbs($uploads_dir,$img_name,$tmb_name, $max_width_tmb,$max_height_tmb,80);
+unlink(""$uploads_dir/$org_name"");
+print ('Uploaded');
+}
+$b = $original_width / $original_height;
+<h5 class=""modal-title"">Upload into Gallery ID #{post_id}</h5>
+<input type=""hidden"" name=""csrf_token"" value=""{token}"">",acp/templates/gallery_upload_form.tpl,GDScript,CWE-352,"# Generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download",True
+"if (!php_var_unserialize(&pmembers, &p, s + buf_len, &var_hash TSRMLS_CC)) {
+if (!php_var_unserialize(&pmembers, &p, s + buf_len, &var_hash TSRMLS_CC)) {
+-EXPECTF--
+
+-","+p;
+if (!php_var_unserialize(&pmembers, &p, s + buf_len, &var_hash TSRMLS_CC) || Z_TYPE_P(pmembers) != IS_ARRAY) {
++p;
+if (!php_var_unserialize(&pmembers, &p, s + buf_len, &var_hash TSRMLS_CC) || Z_TYPE_P(pmembers) != IS_ARRAY) {
+'x:i:1;O:8:""stdClass"":0:{},N;;m:s:40:""1234567890123456789012345678901234567890""',
+echo ""DONE\n"";
+Error at offset 79 of 78 bytes
+DONE",ext/spl/tests/SplObjectStorage_unserialize_bad.phpt,GDScript,deserialization,"# Generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download",True
+"if (bvlc_length < 4) {
+-","if (bvlc_length < 4 || bvlc_length > packet_length) {
+if (bvlc_length > packet_length) {
+return 0;	/* reject */
+}
+",epan/dissectors/packet-bvlc.c,c,injection,"# Generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download",True
+"import java.nio.file.StandardOpenOption;
+final MultiPartUploadHandler parser = new MultiPartUploadHandler(exchange, boundary, maxIndividualFileSize, fileSizeThreshold, defaultEncoding);
+
+private MultiPartUploadHandler(final HttpServerExchange exchange, final String boundary, final long maxIndividualFileSize, final long fileSizeThreshold, final String defaultEncoding) {
+if (fileName != null && fileSizeThreshold == 0) {
+try {
+if (tempFileLocation != null) {
+//Files impl is buggy, hence zero len
+final FileAttribute[] emptyFA = new FileAttribute[] {};
+final LinkOption[] emptyLO = new LinkOption[] {};
+final Path normalized = tempFileLocation.normalize();
+if (!Files.exists(normalized)) {
+final int pathElementsCount = normalized.getNameCount();
+Path tmp = normalized;
+LinkedList<Path> dirsToGuard = new LinkedList<>();
+for(int i=0;i<pathElementsCount;i++) {
+if(Files.exists(tmp, emptyLO)) {
+if(!Files.isDirectory(tmp, emptyLO)) {
+//First existing element in path is a file,
+//this will cause java.nio.file.FileSystemException
+throw UndertowMessages.MESSAGES.pathElementIsRegularFile(tmp);
+}
+break;
+} else {
+dirsToGuard.addFirst(tmp);
+tmp = tmp.getParent();
+}
+}
+try {
+Files.createDirectories(normalized, emptyFA);
+} finally {
+for (Path p : dirsToGuard) {
+try {
+p.toFile().deleteOnExit();
+} catch (Exception e) {
+break;
+}
+}
+}
+} else if (!Files.isDirectory(normalized, emptyLO)) {
+throw new IOException(UndertowMessages.MESSAGES.pathNotADirectory(normalized));
+}
+file = Files.createTempFile(normalized, ""undertow"", ""upload"");
+} else {
+file = Files.createTempFile(""undertow"", ""upload"");
+createdFiles.add(file);
+fileChannel = FileChannel.open(file, StandardOpenOption.READ, StandardOpenOption.WRITE);
+} catch (IOException e) {
+throw new RuntimeException(e);
+if (file == null && fileName != null && fileSizeThreshold < this.currentFileSize) {
+if (tempFileLocation != null) {
+file = Files.createTempFile(tempFileLocation, ""undertow"", ""upload"");
+} else {
+file = Files.createTempFile(""undertow"", ""upload"");
+}
+createdFiles.add(file);
+data.add(currentName, file, fileName, headers);
+-","
+/**
+* Proposed default MINSIZE as 16 KB for content in memory before persisting to disk if file content exceeds
+* {@link #fileSizeThreshold} and the <i>filename</i> is not specified in the form.
+*/
+private static final long MINSIZE = Long.getLong(""io.undertow.multipart.minsize"", 0x4000);
+/**
+* The threshold of form field size to persist to disk.
+* It takes effect only for the form fields which do not have <i>filename</i> specified.
+*/
+private long fieldSizeThreshold = MINSIZE;
+
+final MultiPartUploadHandler parser = new MultiPartUploadHandler(exchange, boundary, maxIndividualFileSize, fileSizeThreshold, defaultEncoding, fieldSizeThreshold);
+public MultiPartParserDefinition setFieldSizeThreshold(long fieldSizeThreshold) {
+this.fieldSizeThreshold = fieldSizeThreshold;
+return this;
+}
+
+private final long fieldSizeThreshold;
+private MultiPartUploadHandler(final HttpServerExchange exchange, final String boundary, final long maxIndividualFileSize, final long fileSizeThreshold, final String defaultEncoding, final long fieldSizeThreshold) {
+this.fieldSizeThreshold = fieldSizeThreshold;
+}
+}
+}
+
+private Path createFile() throws IOException {
+if (tempFileLocation != null) {
+//Files impl is buggy, hence zero len
+final FileAttribute[] emptyFA = new FileAttribute[] {};
+final LinkOption[] emptyLO = new LinkOption[] {};
+final Path normalized = tempFileLocation.normalize();
+if (!Files.exists(normalized)) {
+final int pathElementsCount = normalized.getNameCount();
+Path tmp = normalized;
+LinkedList<Path> dirsToGuard = new LinkedList<>();
+for(int i=0;i<pathElementsCount;i++) {
+if(Files.exists(tmp, emptyLO)) {
+if(!Files.isDirectory(tmp, emptyLO)) {
+//First existing element in path is a file,
+//this will cause java.nio.file.FileSystemException
+throw UndertowMessages.MESSAGES.pathElementIsRegularFile(tmp);
+}
+break;
+} else {
+dirsToGuard.addFirst(tmp);
+tmp = tmp.getParent();
+}
+}
+try {
+Files.createDirectories(normalized, emptyFA);
+} finally {
+for (Path p : dirsToGuard) {
+try {
+p.toFile().deleteOnExit();
+} catch (Exception e) {
+break;
+} else if (!Files.isDirectory(normalized, emptyLO)) {
+throw new IOException(UndertowMessages.MESSAGES.pathNotADirectory(normalized));
+file = Files.createTempFile(normalized, ""undertow"", ""upload"");
+} else {
+file = Files.createTempFile(""undertow"", ""upload"");
+return file;
+if (file == null && fileSizeThreshold < this.currentFileSize && (fileName != null || this.currentFileSize > fieldSizeThreshold)) {
+createdFiles.add(createFile());
+data.add(currentName, file, fileName != null ? fileName : file.getFileName().toString(), headers);
+import org.apache.http.HttpEntity;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+@Test
+public void testLargeContentWithoutFileNameWithSmallFileSizeThreshold() throws Exception {
+DefaultServer.setRootHandler(new BlockingHandler(createInMemoryReadingHandler(10)));
+File file = new File(""tmp_upload_file.txt"");
+try (TestHttpClient client = new TestHttpClient()) {
+file.createNewFile();
+// 32 kb content, which exceeds default fieldSizeThreshold, the FormData.FormValue will be a FileItem
+writeLargeFileContent(file, 0x4000 * 2);
+HttpPost post = new HttpPost(DefaultServer.getDefaultServerURL() + ""/path"");
+HttpEntity entity = MultipartEntityBuilder.create()
+.addTextBody(""formValue"", ""myValue"", ContentType.TEXT_PLAIN)
+.addBinaryBody(""file"", Files.newInputStream(file.toPath()))
+.build();
+post.setEntity(entity);
+HttpResponse result = client.execute(post);
+Assert.assertEquals(StatusCodes.OK, result.getStatusLine().getStatusCode());
+String resp = HttpClientUtils.readResponse(result);
+
+Map<String, String> parsedResponse = parse(resp);
+
+Assert.assertEquals(""false"", parsedResponse.get(""in_memory""));
+Assert.assertEquals(DigestUtils.md5Hex(Files.newInputStream(file.toPath())), parsedResponse.get(""hash""));
+Assert.assertTrue(parsedResponse.get(""file_name"").startsWith(""undertow""));
+Assert.assertTrue(parsedResponse.get(""file_name"").endsWith(""upload""));
+} finally {
+if (!file.delete()) {
+file.deleteOnExit();
+}
+}
+}
+",core/src/test/java/io/undertow/server/handlers/form/MultipartFormDataParserTestCase.java,java,injection,"# Generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download",True
+"if (isteq(list[idx].n, ist(""host"")))
+/* complete with missing Host if needed */
+-","
+/* http2bis draft recommends to drop Host in favor of :authority when
+* the latter is present. This is required to make sure there is no
+* discrepancy between the authority and the host header, especially
+* since routing rules usually involve Host. Here we already know if
+* :authority was found so we can emit it right now and mark the host
+* as filled so that it's skipped later.
+*/
+if (fields & H2_PHDR_FND_AUTH) {
+if (!htx_add_header(htx, ist(""host""), phdr_val[H2_PHDR_IDX_AUTH]))
+goto fail;
+fields |= H2_PHDR_FND_HOST;
+}
+if (isteq(list[idx].n, ist(""host""))) {
+if (fields & H2_PHDR_FND_HOST)
+continue;
+
+}
+/* complete with missing Host if needed (we may validate this test if
+* no regular header was found).
+*/",src/h2.c,c,auth,"# Generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download",True
+"apcu_clear_cache();
+$log->logAction(FroxlorLogger::ADM_ACTION, LOG_INFO, ""cleared APCu cache"");
+header('Location: ' . $linker->getLink([
+]));
+exit();
+opcache_reset();
+$log->logAction(FroxlorLogger::ADM_ACTION, LOG_INFO, ""reset OPcache"");
+header('Location: ' . $linker->getLink([
+]));
+exit();
+-","use Froxlor\UI\HTML;
+if ($_POST['send'] == 'send') {
+apcu_clear_cache();
+$log->logAction(FroxlorLogger::ADM_ACTION, LOG_INFO, ""cleared APCu cache"");
+header('Location: ' . $linker->getLink([
+'section' => 'apcuinfo',
+'page' => 'showinfo'
+]));
+exit();
+} else {
+HTML::askYesNo('cache_reallydelete', $filename, [
+'page' => $page,
+'action' => 'delete',
+], '', [
+]);
+}
+use Froxlor\UI\HTML;
+if ($_POST['send'] == 'send') {
+opcache_reset();
+$log->logAction(FroxlorLogger::ADM_ACTION, LOG_INFO, ""reset OPcache"");
+header('Location: ' . $linker->getLink([
+'section' => 'opcacheinfo',
+'page' => 'showinfo'
+]));
+exit();
+} else {
+HTML::askYesNo('cache_reallydelete', $filename, [
+'page' => $page,
+'action' => 'reset',
+], '', [
+]);
+}
+'cache_reallydelete' => 'Wollen Sie den Cache wirklich leeren?',
+'cache_reallydelete' => 'Do you really want to clear the cache?',",lng/en.lng.php,php,injection,"# Generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download",True
+"cherokee_buffer_is_empty (&conn->validator->user))
+-","cherokee_buffer_is_empty (&conn->validator->user) ||
+cherokee_buffer_is_empty (&conn->validator->passwd))",cherokee/validator_ldap.c,c,injection,"# Generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download",True
+"sort_attr = ""#{query.table_name}.#{sort_attr}"" unless sort_attr.to_s.include?('.')
+query = query.order(""#{sort_attr} #{params[:sort_order] || default_sort_order}"")
+includes = [:content_view, :environments, :composite_content_views, :history => :task]
+sort = ""#{ContentViewVersion.table_name}.major desc, #{ContentViewVersion.table_name}.minor desc""
+respond(:collection => scoped_search(index_relation.uniq, sort, '', :includes => includes))
+require 'katello_test_helper'
+katello_errata","sort_order = (params[:sort_order] || default_sort_order).to_s.downcase
+sort_order = default_sort_order unless ['desc', 'asc'].include?(sort_order)
+query = query.order(sort_attr => sort_order.to_sym)
+options = {
+:includes => [:content_view, :environments, :composite_content_views, :history => :task],
+:custom_sort => lambda { |query| query.order(""#{ContentViewVersion.table_name}.major desc, #{ContentViewVersion.table_name}.minor desc"") }
+}
+respond(:collection => scoped_search(index_relation.uniq, nil, nil, options))
+# encoding: utf-8
+
+require ""katello_test_helper""
+@errata = katello_errata
+
+def test_scoped_search_order
+params = {:sort_by => ""errata_id"", :sort_order => ""DESC'""} # sql injection
+@controller.stubs(:params).returns(params)
+
+query = Erratum.all
+options = {resource_class: Katello::Erratum}
+
+results = @controller.scoped_search(query, ""errata_id"", ""asc"", options)[:results]
+assert_equal [""RHBA-2014-013"", ""RHEA-2014-111"", ""RHSA-1999-1231""], results.map(&:errata_id)
+end",test/controllers/api/v2/api_controller_test.rb,ruby,sql_injection,"# Generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download",True
+"for (j = 0; j < size; j++) {
+r_cons_printf (""%02x"", buf[j + idx]);
+if (op.val != UT64_MAX)
+if (op.ptr != UT64_MAX)
+if (op.refptr != -1)
+-","int minsz = R_MIN (len, size);
+minsz = R_MAX (minsz, 0);
+for (j = 0; j < minsz; j++) {
+ut8 ch = ((j + idx - 1) > minsz)? 0xff: buf[j + idx];
+r_cons_printf (""%02x"", ch);
+if (op.val != UT64_MAX) {
+}
+if (op.ptr != UT64_MAX) {
+}
+if (op.refptr != -1) {
+}",libr/core/cmd_anal.c,c,injection,"# Generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download",True
+"^libcli.ldap.ldap_message.test_recursion_depth_greater_than_max\(none\)
+^libcli.ldap.ldap_message.test_recursion_depth_large\(none\)
+-","/*
+* Check the depth of the parse tree and prevent it from growing
+* too large.
+*/
+data->depth++;
+if (data->depth > data->max_depth) {
+data->has_error = true;
+return false;
+}
+
+if (data->depth > 0) {
+data->depth--;
+}",selftest/knownfail.d/ldap_message,Scilab,injection,"# Generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download",True
+"if config.read(config_file_name):  # pragma: no cover
+sections = config.sections()
+else:
+raise AirflowException(f""Couldn't read {config_file_name}"")
+-","try:
+if config.read(config_file_name):  # pragma: no cover
+sections = config.sections()
+else:
+raise AirflowException(f""Couldn't read {config_file_name}"")
+except Exception as e:
+raise AirflowException(""Exception when parsing %s: %s"", config_file_name, e.__class__.__name__)",airflow/providers/amazon/aws/utils/connection_wrapper.py,python,resource,"# Generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download",True
+": Statement(pstate, Statement::BUBBLE, t), node_(n), group_end_(g == 0)
+if (expression() == 0)
+bool has_duplicate_key() const         { return duplicate_key_ != 0; }
+has_parent_selector = ll != 0 && ll->length() > 0;
+if (contextualized == false) return;
+if ((*g)[i] == 0) continue;
+}
+if (interp != 0) return interp;
+if (m == 0) return false;
+if (b == 0) return false;
+-",": Statement(pstate, Statement::BUBBLE, t), node_(n), group_end_(g == nullptr)
+if (expression() == nullptr)
+bool has_duplicate_key() const         { return duplicate_key_ != nullptr; }
+has_parent_selector = ll != nullptr && ll->length() > 0;
+if (contextualized == nullptr) return;
+if ((*g)[i] == nullptr) continue;
+#include <cstddef>
+#include <type_traits>
+// Comparison operators, based on:
+// https://en.cppreference.com/w/cpp/memory/unique_ptr/operator_cmp
+
+template<class T1, class T2>
+bool operator==(const SharedImpl<T1>& x, const SharedImpl<T2>& y) {
+return x.ptr() == y.ptr();
+}
+
+template<class T1, class T2>
+bool operator!=(const SharedImpl<T1>& x, const SharedImpl<T2>& y) {
+return x.ptr() != y.ptr();
+}
+
+template<class T1, class T2>
+bool operator<(const SharedImpl<T1>& x, const SharedImpl<T2>& y) {
+using CT = typename std::common_type<T1*, T2*>::type;
+return std::less<CT>()(x.get(), y.get());
+}
+
+template<class T1, class T2>
+bool operator<=(const SharedImpl<T1>& x, const SharedImpl<T2>& y) {
+return !(y < x);
+}
+
+template<class T1, class T2>
+bool operator>(const SharedImpl<T1>& x, const SharedImpl<T2>& y) {
+return y < x;
+}
+
+template<class T1, class T2>
+bool operator>=(const SharedImpl<T1>& x, const SharedImpl<T2>& y) {
+return !(x < y);
+}
+
+template <class T>
+bool operator==(const SharedImpl<T>& x, std::nullptr_t) noexcept {
+return x.isNull();
+}
+
+template <class T>
+bool operator==(std::nullptr_t, const SharedImpl<T>& x) noexcept {
+return x.isNull();
+}
+
+template <class T>
+bool operator!=(const SharedImpl<T>& x, std::nullptr_t) noexcept {
+return !x.isNull();
+}
+
+template <class T>
+bool operator!=(std::nullptr_t, const SharedImpl<T>& x) noexcept {
+return !x.isNull();
+}
+
+template <class T>
+bool operator<(const SharedImpl<T>& x, std::nullptr_t) {
+return std::less<T*>()(x.get(), nullptr);
+}
+
+template <class T>
+bool operator<(std::nullptr_t, const SharedImpl<T>& y) {
+return std::less<T*>()(nullptr, y.get());
+}
+
+template <class T>
+bool operator<=(const SharedImpl<T>& x, std::nullptr_t) {
+return !(nullptr < x);
+}
+
+template <class T>
+bool operator<=(std::nullptr_t, const SharedImpl<T>& y) {
+return !(y < nullptr);
+}
+
+template <class T>
+bool operator>(const SharedImpl<T>& x, std::nullptr_t) {
+return nullptr < x;
+}
+
+template <class T>
+bool operator>(std::nullptr_t, const SharedImpl<T>& y) {
+return y < nullptr;
+}
+
+template <class T>
+bool operator>=(const SharedImpl<T>& x, std::nullptr_t) {
+return !(x < nullptr);
+}
+
+template <class T>
+bool operator>=(std::nullptr_t, const SharedImpl<T>& y) {
+return !(nullptr < y);
+}
+
+}  // namespace Sass
+if (interp != nullptr) return interp;
+if (m == nullptr) return false;
+if (b == nullptr) return false;
+class EmptyTestObj : public Sass::SharedObj {
+public:
+const std::string to_string() const { return """"; }
+};
+
+bool TestComparisonWithSharedPtr() {
+Sass::SharedImpl<EmptyTestObj> a = new EmptyTestObj();
+ASSERT(a == a);
+Sass::SharedImpl<EmptyTestObj> b = a;
+ASSERT(a == b);
+Sass::SharedImpl<EmptyTestObj> c = new EmptyTestObj();
+ASSERT(a != c);
+Sass::SharedImpl<EmptyTestObj> nullobj;
+ASSERT(a != nullobj);
+ASSERT(nullobj == nullobj);
+return true;
+}
+
+bool TestComparisonWithNullptr() {
+Sass::SharedImpl<EmptyTestObj> a = new EmptyTestObj();
+ASSERT(a != nullptr);
+Sass::SharedImpl<EmptyTestObj> nullobj;
+ASSERT(nullobj == nullptr);
+return true;
+}
+
+TEST(TestComparisonWithSharedPtr);
+TEST(TestComparisonWithNullptr);",test/test_shared_ptr.cpp,cpp,injection,"# Generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download",True
+"Formatter.prototype._re = /\%(?:\(([\w_.]+)\)|([1-9]\d*)\$)?([0 +\-\#]*)([\*1-9]0*)*(?:(\.)(\*|\d+)?)?[hlL]?([\%bscdeEfFgGioOuxX])/g;
+-",Formatter.prototype._re = /\%(?:\(([\w_.]+)\)|([1-9]\d*)\$)?([0 +\-\#]*)(\*|\d+)?(?:(\.)(\*|\d+)?)?[hlL]?([\%bscdeEfFgGioOuxX])/g;,printf.js b/lib/printf.js,javascript,injection,"# Generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download",True
