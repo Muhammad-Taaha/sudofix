@@ -8,7 +8,6 @@ vector_store/docs.index
 vector_store/metadata.pkl
 dataset/
 <<<<<<< HEAD
-rag/
 rag-fix/
 __pycache__/
 *.pyc
@@ -23,6 +22,7 @@ Testing_files_for_scancode/
 =======
 rag/datasetinrag
 rag/datasetinrag.zip
+rag/cleaned_vulnerability_dataset_filtered.csv
 rag/cleaned_vulnerability_dataset.csv
 vector_store/
 >>>>>>> origin/rag-part
