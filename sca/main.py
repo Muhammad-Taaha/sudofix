@@ -152,7 +152,7 @@ def print_results(results: Dict[str, Any], verbose: bool = False):
     
     # Check if we have any results
     if not results:
-        print("\n⚠️  No results returned from analysis")
+        print("\n  No results returned from analysis")
         return
     
     # Summary
@@ -173,22 +173,22 @@ def print_results(results: Dict[str, Any], verbose: bool = False):
             print(f"  • Git history issues: {len(results['history_findings'])}")
         
         if total_packages == 0:
-            print("\n  ⚠️  No packages found! This could mean:")
+            print("\n    No packages found! This could mean:")
             print("     1. No manifest files (package.json, requirements.txt, etc.) found")
             print("     2. Manifest files exist but no resolvers are available")
             print("     3. The dependency resolution failed silently")
             if verbose:
-                print("\n  💡 Tip: Run with --verbose to see more details")
+                print("\n   Tip: Run with --verbose to see more details")
     
     # Per-project details
     if results.get("sub_projects"):
         for i, project in enumerate(results["sub_projects"], 1):
-            print(f"\n📁 Project {i}: {project.get('project_path', 'unknown')}")
+            print(f"\n Project {i}: {project.get('project_path', 'unknown')}")
             print("-" * 40)
             
             packages = project.get("packages", [])
             if packages:
-                print(f"  📦 Packages ({len(packages)}):")
+                print(f"   Packages ({len(packages)}):")
                 for pkg in packages[:5]:  # Show first 5
                     name = pkg.get("name", "unknown")
                     version = pkg.get("version", "unknown")
@@ -197,11 +197,11 @@ def print_results(results: Dict[str, Any], verbose: bool = False):
                 if len(packages) > 5:
                     print(f"    ... and {len(packages) - 5} more")
             else:
-                print(f"  📦 Packages: 0 found")
+                print(f"   Packages: 0 found")
             
             vulnerabilities = project.get("vulnerabilities", [])
             if vulnerabilities:
-                print(f"\n  ⚠️  Vulnerabilities ({len(vulnerabilities)}):")
+                print(f"\n    Vulnerabilities ({len(vulnerabilities)}):")
                 for vuln in vulnerabilities[:5]:
                     pkg = vuln.get("package_name", "unknown")
                     severity = vuln.get("severity", "unknown")
@@ -213,7 +213,7 @@ def print_results(results: Dict[str, Any], verbose: bool = False):
             
             outdated = project.get("outdated", [])
             if outdated:
-                print(f"\n  📅 Outdated packages ({len(outdated)}):")
+                print(f"\n   Outdated packages ({len(outdated)}):")
                 for out in outdated[:3]:
                     pkg = out.get("package_name", "unknown")
                     current = out.get("current_version", "unknown")
@@ -222,7 +222,7 @@ def print_results(results: Dict[str, Any], verbose: bool = False):
             
             license_findings = project.get("license_findings", [])
             if license_findings:
-                print(f"\n  📄 License findings ({len(license_findings)}):")
+                print(f"\n   License findings ({len(license_findings)}):")
                 for lic in license_findings[:3]:
                     file_path = lic.get("file_path", "unknown")
                     license_expr = lic.get("license_expression", "unknown")
@@ -230,7 +230,7 @@ def print_results(results: Dict[str, Any], verbose: bool = False):
     
     # Git history findings
     if results.get("history_findings"):
-        print(f"\n📜 Git History Findings ({len(results['history_findings'])}):")
+        print(f"\n Git History Findings ({len(results['history_findings'])}):")
         for finding in results["history_findings"][:5]:
             commit = finding.get("commit_hash", "unknown")[:8]
             finding_type = finding.get("type", "unknown")
@@ -321,13 +321,13 @@ def main():
                 print(output_data)
         else:
             print_results(results, verbose=args.verbose)
-            print(f"\n✅ Analysis completed in {duration:.2f} seconds")
+            print(f"\n Analysis completed in {duration:.2f} seconds")
             
             # Show summary of findings
             if isinstance(results, dict) and results.get("sub_projects"):
                 total_packages = sum(len(p.get("packages", [])) for p in results["sub_projects"])
                 if total_packages == 0:
-                    print("\n💡 Tip: No packages were detected. Make sure your project has:")
+                    print("\n Tip: No packages were detected. Make sure your project has:")
                     print("   - package.json for Node.js/npm projects")
                     print("   - requirements.txt or pyproject.toml for Python")
                     print("   - pom.xml for Java/Maven")

@@ -257,6 +257,7 @@ class SudofixTUI(App):
                     )
                 with Horizontal(classes="button-row"):
                     yield Button("▶ Start", variant="primary", id="start-btn")
+                    yield Button("Only SCA", variant="success", id="only-sca-btn")   # ← NEW BUTTON
                     yield Button("Dry-run: OFF", id="dry-btn", variant="warning")
                     yield Button("📄 Export", id="export-btn", variant="default")
                     yield Button("✏️ Edit File (e)", id="edit-btn", variant="default")
@@ -388,6 +389,73 @@ class SudofixTUI(App):
     # ------------------------------------------------------------------
     # Pipeline execution with LIVE LOGS
     # ------------------------------------------------------------------
+
+    @work(thread=True)
+    def action_only_sca(self):
+        """Run ONLY SCA with LIVE output like terminal"""
+        repo_path = self.query_one("#repo-path").value.strip() or "."
+
+        log = self.query_one("#live-log", Log)
+        log.write(f"\n🚀 Running ONLY SCA on: {repo_path}\n")
+        log.write("Live output starting...\n\n")
+
+        self.call_from_thread(self._init_findings_table)
+        self.findings.clear()
+
+        with tempfile.NamedTemporaryFile(mode='w+', suffix='.jsonl', delete=False) as f:
+            findings_tmp = f.name
+        os.environ["SUDOFIX_FINDINGS_FILE"] = findings_tmp
+
+        self.query_one("#status").update("Status: Running SCA Only (Live)...")
+
+        try:
+            sca_main_path = Path(__file__).parent.parent/ "sudofix" / "sca" / "main.py"
+
+            if not sca_main_path.exists():
+                log.write(f"❌ sca/main.py not found!\n")
+                return
+
+            # Force UTF-8 encoding for emojis
+            env = os.environ.copy()
+            env["PYTHONIOENCODING"] = "utf-8"
+
+            # Use Popen for live streaming
+            process = subprocess.Popen(
+                [sys.executable, str(sca_main_path), repo_path, "--verbose"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,   # Merge error into output
+                text=True,
+                cwd=Path(__file__).parent.parent/ "sudofix",
+                env=env,
+                bufsize=1
+            )
+
+            # Read output line by line in real-time
+            for line in process.stdout:
+                log.write(line)
+                self.call_from_thread(log.refresh)   # Force UI update
+
+            # Wait for process to finish
+            returncode = process.wait()
+
+            if returncode == 0:
+                log.write("\n✅ SCA completed successfully!\n")
+            else:
+                log.write(f"\n⚠️ SCA finished with code {returncode}\n")
+
+        except Exception as e:
+            log.write(f"\n❌ Error: {e}\n")
+            import traceback
+            log.write(traceback.format_exc())
+        finally:
+            self._parse_findings_file(findings_tmp)
+            os.unlink(findings_tmp)
+            os.environ.pop("SUDOFIX_FINDINGS_FILE", None)
+
+        self.call_from_thread(self._finished)
+        self.notify("SCA Analysis Complete", severity="success")
+
+
     @work(thread=True)
     def action_start(self):
         repo_path = self.query_one("#repo-path").value.strip() or "."
@@ -494,6 +562,8 @@ class SudofixTUI(App):
     def on_button_pressed(self, event):
         if event.button.id == "start-btn":
             self.action_start()
+        elif event.button.id == "only-sca-btn":          # ← NEW
+            self.action_only_sca()
         elif event.button.id == "dry-btn":
             self.action_toggle_dryrun()
         elif event.button.id == "set-repo":
