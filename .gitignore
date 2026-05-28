@@ -31,3 +31,6 @@ vector_store/
 rag/chroma_db_*
 *.sqlite3
 *.bin
+rag/chroma_db_*
+*.sqlite3
+*.bin
