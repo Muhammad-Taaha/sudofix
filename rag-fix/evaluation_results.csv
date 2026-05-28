@@ -1,0 +1,405 @@
+vuln_preview,generated_preview,ground_truth_preview,fixed_by_rule,similarity
+"<input id=""client_id""
+value={ this.state.clientId }
+<input id=""client_secret""
+value={ this.state.cli","import React from ""react""
+import PropTypes from ""prop-types""
+
+export default class InitializedInput extends React.Component {
+  componentDidMount() {
+","const InitializedInput = getComponent(""InitializedInput"")
+<InitializedInput id=""client_id""
+initialVa",True,0.6300168037414551
+"String dbFileName = String.format(""sqlite-jdbc-tmp-%d.db"", resourceAddr.hashCode());
+-","import java.security.SecureRandom;
+String dbFileName = String.format(""sqlite-jdbc-tmp-%08x.db"", new SecureRandom().nextInt());","import java.util.UUID;
+String dbFileName = String.format(""sqlite-jdbc-tmp-%s.db"", UUID.randomUUID())",True,0.8501542806625366
+"default:
+return 0;
+-","default:
+return 0;
+-","default: {
+TProtocolException::throwInvalidSkipType(arg_type);
+}",False,0.9999999403953552
+"versionCode 189
+versionName ""27.189""
+<string>27.189</string>
+-","versionCode 190
+versionName ""27.190""
+<string>27.190</string>
+-","versionCode 190
+versionName ""27.190""
+
+## 27.190 (2022-08-23)
+
+<string>27.190</string>",True,0.8932937383651733
+"let json;
+let raw;
+res.close();
+return;
+raw = Buffer.concat([buffer, chunk]).toString();
+res.close()","let json;
+let raw = '';
+res.close();
+return;
+try {
+  raw = Buffer.concat([buffer, chunk]).toString();
+} catch (e) {
+  // Handle error appropriately
+}
+","let json = {};
+let raw = '{}';
+//
+try {
+raw = Buffer.concat([buffer, chunk]).toString();
+} catch (e)",True,0.9496203064918518
+"compiler->loop_depth--;
+compiler->loop_identifier[compiler->loop_depth] = NULL;
+-","compiler->loop_depth--;
+if (compiler->loop_depth >= 0) {
+    compiler->loop_identifier[compiler->loop_depth] = NULL;
+}","if (compiler->loop_depth > 0)
+{
+compiler->loop_depth--;
+compiler->loop_identifier[compiler->loop_dep",True,0.9598952531814575
+"* set up for use in conjunction with a block cipher to handle the
+* message.
+byte[] M = null, K = nu","byte[] M = null, K = null, K1 = null, K2 = null;
+int len;
+
+len = K1.length;
+cipher.init(false, new KeyParameter(K1));
+len += cipher.doFinal(M, len);
+
+","* Set up for use in conjunction with a block cipher to handle the
+* message.It is <b>strongly</b> re",True,0.8773776292800903
+"int i;
+init_get_bits(&gb, nal->data + 1, (nal->size - 1) * 8);
+-","int i, ret;
+ret = init_get_bits8(&gb, nal->data + 1, nal->size - 1);
+if (ret < 0) {
+av_log(h->avctx, AV_LOG_ERROR, ""Invalid zero-sized VCL NAL unit\n""","int i, ret;
+ret = init_get_bits8(&gb, nal->data + 1, nal->size - 1);
+if (ret < 0) {
+av_log(h->avctx,",True,0.8318244218826294
+2018-04-11 Fixed bug#[13782](https://bugs.otrs.org/show_bug.cgi?id=13782) - Set of customer dynamic ,"TicketID => $Param{TicketID},
+IsVisibleForCustomer => 0,",- 2018-04-13 Fixed bug#[13801](https://bugs.otrs.org/show_bug.cgi?id=13801) - Preview of internal ar,True,0.6543518304824829
+"headers.emplace(key, val);
+headers.emplace(key, val);
+headers.emplace(key, val);
+headers.emplace(key","inline bool has_crlf(const char* s) {
+    auto p = s;
+    while (*p) {
+        if (*p == '\r' || *p == '\n') {
+            return true;
+        }
+    ","inline bool has_crlf(const char* s) {
+auto p = s;
+while (*p) {
+if (*p == '\r' || *p == '\n') {
+retur",True,0.7571719288825989
+"if (self::$output_type == self::HTML_OUTPUT) {
+self::$output_type != self::HTML_OUTPUT
+self::$output","$html_output = self::$output_type == self::HTML_OUTPUT;
+
+if ($html_output) {
+    $plaintext = RichText::getTextFromHtml($data[$ID][$k]['name'], false,","$html_output = in_array(
+self::$output_type,
+[
+self::HTML_OUTPUT,
+self::GLOBAL_SEARCH, // For a glob",True,0.9614313244819641
+"env['HTTP_X_CSRF_TOKEN'] == token ||
+Request.new(env).params[options[:authenticity_param]] == token
+","require 'rack/utils'
+
+def secure_compare(a, b)
+  Rack::Utils.secure_compare(a.to_s, b.to_s)
+end
+
+secure_compare(env['HTTP_X_CSRF_TOKEN'], token) ||
+se","secure_compare(env['HTTP_X_CSRF_TOKEN'], token) ||
+secure_compare(Request.new(env).params[options[:a",True,0.8105168342590332
+"if (isset($_REQUEST['pos'])) {
+-",if (isset($_REQUEST['pos'])) {,"if (PMA_isValid($_REQUEST['pos'], 'integer')) {",True,0.9968464374542236
+"don't crash when data is POST-ed to the redirect URL, it has just 1 POST parameter and it is not ""re","AC_INIT([mod_auth_openidc],[2.1.4rc1],[hzandbelt@pingidentity.com])
+apr_pool_t *pool;
+char *memory;
+size_t size;
+size_t oidc_curl_write(void *contents","01/14/2017
+- use dynamic memory buffer for writing HTTP call responses; solves curl/mpm-event interf",True,0.8466941118240356
+"Managesieve: Fix so ""Create filter"" option does not show up when Filters menu is disabled (#6723)
+En","if (empty($recipients)) {
+return new enigma_error(enigma_error::KEYNOTFOUND);
+}
+
+$vars = array('email' => $status->getData('missing'));
+$msg  = 'enigm","- Enigma: Fix error message when trying to encrypt with a revoked key (#6607)
+if ($email = $status->",True,0.7867950201034546
+"""version"": ""5.6.0"",
+""version"": ""5.6.0"",
+-","""version"": ""6.2.0"",","""version"": ""5.7.0"",
+""version"": ""5.7.0"",",True,0.8936333656311035
+"from tuf.api.metadata import Targets
+targets = Targets(1, ""1.0.19"", self.sim.safe_expiry, {}, None)
+","from tuf.api.metadata import SPECIFICATION_VERSION, Targets
+spec_version = ""."".join(SPECIFICATION_VERSION)
+targets = Targets(1, spec_version, self.sim","from tuf.api.metadata import SPECIFICATION_VERSION, Targets
+spec_version = ""."".join(SPECIFICATION_VE",True,0.93635094165802
+"args[0] = ""<a href=\"""" + URL_ENCODER.encode(displayPath) +
+""\"">"" + displayPath + ""</a>"";
+args[1] = c","args[0] = ""<a href=\"""" + URL_ENCODER.encode(displayPath) +
+""\"">"" + displayPath + ""</a>"";
+args[1] = ctxt.getWebappVersion();
+if ("""".equals(args[1])) {
+","args[0] = ""<a href=\"""" + URL_ENCODER.encode(displayPath)
++ ""\"">"" + RequestUtil.filter(displayPath) +",True,0.9997232556343079
+"bmcweb \
+bmcweb \
+bmcweb \
+bmcweb \
+bmcweb \
+RDEPENDS:${PN}-extras += "" bmcweb \
+bmcweb \
+bmcweb \
+b","RDEPENDS:${PN}-extras += "" bmcweb""","RDEPENDS:${PN}-extras += "" \",True,0.9338830709457397
+"int args, len;
+while (len > 0) {","int args, len, maxloop = 1024;
+while (len > 0 && --maxloop > 0) {","int args, len, maxloop = 1024;
+while (len > 0 && --maxloop > 0) {",True,0.913713812828064
+"val reader = SAXParserFactory.newInstance().newSAXParser()
+-","import javax.xml.XMLConstants
+val reader = SAXParserFactory.newInstance()
+.apply {
+setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
+}
+.newSAXP","import javax.xml.XMLConstants
+val reader = SAXParserFactory.newInstance()
+.apply {
+setFeature(XMLCon",True,0.8535342812538147
+"""version"": ""1.7.2"",
+""resolved"": ""https://registry.npmjs.org/angular/-/angular-1.7.2.tgz"",
+""integrity","{
+  ""dependencies"": {
+    ""angular"": {
+      ""version"": ""1.7.9"",
+      ""resolved"": ""https://registry.npmjs.org/angular/-/angular-1.7.9.tgz"",
+      ""in","""version"": ""1.7.9"",
+""resolved"": ""https://registry.npmjs.org/angular/-/angular-1.7.9.tgz"",
+""integrity",True,0.9332937002182007
+"if ( $t_bug_id < 1 || !bug_exists( $t_bug_id ) ) {
+-","$t_view_bug_threshold = config_get('view_bug_threshold');
+if ( $t_bug_id < 1
+|| !bug_exists( $t_bug_id )
+|| !access_has_bug_level( $t_view_bug_thresho","$t_view_bug_threshold = config_get('view_bug_threshold');
+if ( $t_bug_id < 1
+|| !bug_exists( $t_bug_",True,0.8715174794197083
+"
+url = url.replaceFirst(""/navigate/directions/v5/gh/"" + profile + ""/"", """");
+url = url.replaceAll(""\\","String urlStart = ""/navigate/directions/v5/gh/"" + profile + ""/"";
+if (!url.startsWith(urlStart)) throw new IllegalArgumentException(""Incorrect URL "" + ","String urlStart = ""/navigate/directions/v5/gh/"" + profile + ""/"";
+if (!url.startsWith(urlStart)) thro",True,0.8793855905532837
+"static void
+return;
+return;
+return;
+return;
+return;
+return;
+uncompress_hdr_iphc(buffer, buffer_size,","static void
+uncompress_hdr_iphc(buffer, buffer_size, frag_size);
+-","* \return A boolean value indicating whether the uncompression succeeded.
+static bool
+return false;
+",True,0.9544755816459656
+"-j->code_bits;
+if (s > j->code_bits) return stbi__err(""bad huffman code"",""Combined length longer tha","-j->code_bits;
+if (s > j->max_code_bits) return stbi__err(""bad huffman code"",""Combined length longer than maximum code bits available"");
+-","// returns 1 if the sum of two signed ints is valid (between -2^31 and 2^31-1 inclusive), 0 on overf",True,0.9888275861740112
+"MySQLiteHelper.TAGS_COLUMN_ID_ACCOUNT + "" = "" + tag.getMasterAccountId() + "" AND "" +
+MySQLiteHelper.","String[] getTagArgs = {String.valueOf(tag.getMasterAccountId()), tag.getValue()};
+
+MySQLiteHelper.TAGS_COLUMN_ID_ACCOUNT + "" = ? AND "" +
+MySQLiteHelpe","String[] getTagArgs = {String.valueOf(tag.getMasterAccountId()), tag.getValue()};
+
+MySQLiteHelper.TA",True,0.9385059475898743
+"if (gif_main_loop (context) == -1 || context->animation->frames == NULL) {
+-","gint retval;
+retval = gif_main_loop (context);
+if (retval == -1 || context->animation->frames == NULL) {
+    // Handle the error case
+} else if (retva","gint retval;
+retval = gif_main_loop (context);
+if (retval == -1 || context->animation->frames == NUL",True,0.8870924711227417
+"import org.apache.catalina.deploy.LoginConfig;
+// Specifically allow access to the form login and fo","import org.apache.catalina.deploy.LoginConfig;
+// Specifically allow access to the form login and form error pages
+// and the ""j_security_check"" actio","<fix>
+Remove unneeded handling of FORM authentication in RealmBase. (kkolinko)
+</fix>",True,0.9998766183853149
+"version: v1.13.5
+ignore: {}
+# patches apply the minimum changes required to fix a vulnerability
+-","version: v1.25.0
+# ignores vulnerabilities until expiry date; change duration by modifying expiry date
+ignore:
+'snyk:lic:npm:shescape:MPL-2.0':
+- '*':","version: v1.25.0
+# ignores vulnerabilities until expiry date; change duration by modifying expiry da",True,0.7265636920928955
+"Added GIF decompression bomb check #6402
+-","enum {
+gif_lzw_max_code_size = 12
+};
+
+gif_lzw codes[1 << gif_lzw_max_code_size];
+/* LZW Minimum Code Size */
+if (lzw_cs > gif_lzw_max_code_size) {
+six","- Fixed null check for fribidi_version_info in FriBiDi shim #6376
+[nulano]
+",True,0.7621059417724609
+"guint32     off      = offset;
+guint32     off                 = offset;
+guint32     off     = offse","guint32 off = offset, last_off;
+last_off = off;
+if (off < last_off) {
+    THROW(ReportedBoundsError);
+}
+last_off = off;","guint32     off      = offset, last_off;
+last_off = off;
+if (off < last_off) {
+THROW(ReportedBoundsE",True,0.8329892158508301
+"* Get currency symbol by using a 3-letter ISO 4217 currency code.
+$desc = isset($desc[$code]) ? $des","// Get currency symbol by using a 3-letter ISO 4217 currency code.
+$desc = $desc[$code] ?? '';
+
+'#(<[^>]+?[\x00-\x20""\'])((?:on|xmlns)+[=\w\d()]*+)#iu","// Adds deprecated function for BC issues
+* @deprecated
+*/
+function stripslash() {}
+
+/**
+* @deprecat",True,0.8985928297042847
+"options[:tags] || self.class.allowed_tags
+-","if options[:tags]
+  remove_safelist_tag_combinations(options[:tags])
+else
+  self.class.allowed_tags
+end","def loofah_using_html5?
+# future-proofing, see https://github.com/flavorjones/loofah/pull/239
+Loofah",True,0.8897822499275208
+"import commands
+command = siginfo.substitute(p.get_fix_cmd(siginfo.audit_event, plugin.args))
+rc, ou","import subprocess
+command = siginfo.substitute(p.get_fix_cmd(siginfo.audit_event, plugin.args).split())
+try:
+output = subprocess.check_output(command,","import subprocess
+command = siginfo.substitute_array(p.get_fix_cmd(siginfo.audit_event, plugin.args)",True,0.8979456424713135
+"if (hybivers < 0) return HANDLER_FINISHED;
+-",if (hybivers < 0) return HANDLER_FINISHED;,"if (hybivers < 0) {
+r->handler_module = NULL;
+return HANDLER_FINISHED;
+}",True,0.9985051155090332
+Thanks for participating in the {{name}} incident. We would appreciate if you could rate your experi,"""Thanks for participating in the {{name}} incident. We would appreciate if you could rate your experience and provide feedback.""","""title"": incident.title,
+Thanks for participating in the {{name}} (""{{title}}"") incident. We would a",True,0.9805784225463867
+"disks => [ $ARGV[0] ] }
+disks => \@ARGV }
+my @disks = $p->findnodes ('//devices/disk/source/@dev');
+","disks => [ [ $ARGV[0], undef ] ] }
+my @disks = map { [ $_, undef ] } @ARGV;
+disks => \@disks }
+my $nodes = $p->find ('//devices/disk');
+
+my @disks;
+my","my $format;
+
+=item B<--format> raw
+
+Specify the format of disk images given on the command line.  If",True,0.9230291843414307
+"// Lightclient server support (only after altair)
+// - Persist state witness
+// - Use block's syncAg","// Lightclient server support (only after altair)
+// - Persist state witness
+// - Use block's syncAggregate
+if (blockEpoch >= chain.config.ALTAIR_FORK","
+// Lightclient server support (only after altair)
+// - Persist state witness
+// - Use block's syncA",True,0.9951348304748535
+"PNG/JPG file
+320x240 resolution or less
+size above max slide size (~50 KB)
+-","if (file_size > MAX_SLIDE_SIZE) {
+    free(blob);
+    blob = NULL;
+}","} else {
+free(blob);
+blob = NULL;",True,0.7852346897125244
+"set(RAW_VERSION_STRING ""3.0.0-beta2"")
+#define FREERDP_JNI_VERSION ""3.0.0-beta2""
+set(RAW_VERSION_STRI","set(RAW_VERSION_STRING ""3.0.0-rc1"")
+#define FREERDP_JNI_VERSION ""3.0.0-rc1""
+set(RAW_VERSION_STRING ""3.0.0-rc1"")","set(RAW_VERSION_STRING ""3.0.0-dev3"")
+#define FREERDP_JNI_VERSION ""3.0.0-dev3""
+set(RAW_VERSION_STRING",True,0.9510869383811951
+"2022-04-23: Fix faulty checks for array boundary which caused buffer over-read
+2022-04-23: Fix issue","if (tagvalues_count == 0) {
+    debug_print(""%s\n"", ""Invalid tagvalues count"");
+    return MOBI_DATA_CORRUPT;
+}",2022-04-26: Fix array boundary check when parsing inflections which could result in buffer over-read,True,0.7873051166534424
+"<?php wp_editor( $post->post_content, 'attachment_content', $editor_args ); ?>
+-","<?php wp_editor( format_to_edit( $post->post_content ), 'attachment_content', $editor_args ); ?>","<?php wp_editor( format_to_edit( $post->post_content ), 'attachment_content', $editor_args ); ?>",True,0.972620964050293
+"FullConstructor.add_multi_constructor(
+u'tag:yaml.org,2002:python/object/apply:',
+FullConstructor.co","FullConstructor.add_multi_constructor(
+u'tag:yaml.org,2002:python/object/apply:',
+FullConstructor.construct_python_object_apply)
+
+FullConstructor.add_","UnsafeConstructor.add_multi_constructor(
+u'tag:yaml.org,2002:python/object/apply:',
+UnsafeConstructo",True,0.9994888305664062
+"""version"": ""0.6.0"",
+return this.doProxy(req, res, target ? concatPath(baseUrl, prefix, target) : bas","""version"": ""0.7.0"",
+forwardToken?: boolean;
+{
+id: 'THIRD_PARTY_SERVICE',
+url: 'https://some-service.com/some-endpoint',
+forwardToken: false,
+},
+it('sh","## 0.7.0 (2022-05-18)
+
+### Features
+
+- Adds an option to opt out from token fowrarding (per service)",True,0.7361323833465576
+"rex_blame = re.compile(r'\s*(\d+)\s*(\S+) (.*)')
+-",rex_blame = re.compile(r'\s*(\d+)\s+(\S+) (.*)'),rex_blame = re.compile(r'\s*(\d+)\s+(\S+) (.*)'),True,0.9974390268325806
+"// GHSA-cqh2-vc2f-q4fh: Prevent parent directory writes outside of Basepath
+fPath = strings.ReplaceA","// GHSA-cqh2-vc2f-q4fh: Prevent parent directory writes outside of Basepath
+if strings.Contains(fPath, ""../"") || strings.Contains(fPath, ""..\\"") {
+   ","// GHSA-8459-6rc9-8vf8: Prevent parent directory writes outside of Basepath
+if strings.Contains(fPat",True,0.9601101875305176
+"ThrowReaderException(CorruptImageError,
+""ImproperImageHeader"");
+-","{
+    options = DestroyString(options);
+    ThrowReaderException(CorruptImageError, ""ImproperImageHeader"");
+}","{
+options=DestroyString(options);
+ThrowReaderException(CorruptImageError,
+""ImproperImageHeader"");
+}",True,0.9154874086380005
+"-without-mail_pop3_module \
+-without-mail_smtp_module \
+-without-mail_imap_module \
+-with-http_v2_mo","-without-mail_pop3_module \
+-without-mail_smtp_module \
+-without-mail_imap_module \
+-with-http_v2_module \
+-without-http_uwsgi_module \
+-without-http_","--with-http_realip_module \
+=== TEST 1.2.1: IgnoreIP request with X-Forwarded-For allow without real",True,0.9946596622467041
+"ef->file_entry[ef->length-1].quotes |= quotes;
+while (fgets(buf, sizeof(buf), kf)) {
+/* Value of pre","ef->file_entry[ef->length-1].quotes |= quotes;
+while (fgets(buf, sizeof(buf), kf)) {
+    if (ef->file_entry[ef->length-1].value != NULL) {
+        // ","ef->file_entry[ef->length-1].quotes = quotes;
+while (fgets(buf, BUFSIZ-1, kf)) {
+buf[BUFSIZ-1] = '\0",True,0.9775958061218262
