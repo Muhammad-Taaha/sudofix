@@ -11,6 +11,7 @@ from git_controller.git_checker import Checker
 from controllers.data_base_controller import Postgres
 from sastscanner.core.rule_engine import RuleEngine
 from sastscanner.findings.finding import Finding
+from rag.retriever import VulnerabilityRetriever   # your reranker RAG
 
 
 class CliAgent:
@@ -20,13 +21,15 @@ class CliAgent:
         self.dry_run = dry_run
 
         # Core components
-        self.vector_store = VectorStore()
+        self.vector_store = VectorStore()                     # for other tasks (e.g., general embeddings)
         self.llm = OllamaClient()
         self.redis_manager = RedisManager()
         self.redis_client = self.redis_manager.connect()
         self.git_controller = Checker(command)
         self.data_base = Postgres()
         self.sast_engine = RuleEngine()
+        # Reranker RAG for vulnerability fixes
+        self.fix_retriever = VulnerabilityRetriever(chroma_dir="./rag/chroma_db_reranker_ready")
 
         # Ensure fixes directory exists
         os.makedirs("fixes", exist_ok=True)
@@ -104,28 +107,27 @@ class CliAgent:
                 pattern = self._infer_pattern_from_finding(findings[0])
                 print(f"   🔎 Inferred pattern: {pattern}")
 
-        # --- RAG retrieval (only if we have findings and a language) ---
+        # --- RAG retrieval using the reranker RAG (only for security review) ---
         examples: List[Dict] = []
         if is_review_task and findings:
             print(f"🔎 Retrieving similar vulnerable‑fixed pairs for {file_name} ({detected_lang})...")
-            similar = self.vector_store.query(
-                query_text=content,
-                top_k=3,
+            # Use the reranker retriever instead of the general vector store
+            similar = self.fix_retriever.retrieve_fixes(
+                vulnerable_code=content,
+                vulnerability_type=pattern,
                 language=detected_lang,
-                pattern=pattern
+                top_k=3
             )
             if similar:
                 examples = similar
                 print(f"✅ Retrieved {len(similar)} relevant examples")
-                # Debug: print first example summary
                 for idx, ex in enumerate(examples[:2]):
-                    print(f"   Example {idx+1}: pattern={ex['pattern']}, language={ex['language']}, file={ex['file']}")
+                    print(f"   Example {idx+1}: pattern={ex['pattern']}, language={ex['language']}")
                     print(f"      Fixed code preview: {ex['fixed_code'][:150]}...")
             else:
                 print(f"⚠️ No similar examples for {detected_lang}" + (f" with pattern {pattern}" if pattern else ""))
 
         # --- Build the prompt with SAST findings and RAG examples ---
-        # Improved prompt to reduce hallucinations
         prompt = f"""{task_prompt}
 
 Language: {detected_lang.upper()}
@@ -142,6 +144,9 @@ Static analysis detected the following issues:
             prompt += "\nHere are REAL examples of similar vulnerabilities and their CORRECT fixes:\n"
             for i, ex in enumerate(examples):
                 prompt += f"\nExample {i+1} (pattern: {ex['pattern']}, language: {ex['language']}):\n"
+                # Optionally show the vulnerable code from the example (if available)
+                if ex.get('vulnerable_code_example'):
+                    prompt += f"Vulnerable code:\n```{detected_lang}\n{ex['vulnerable_code_example']}\n```\n"
                 prompt += f"Fixed code:\n```{detected_lang}\n{ex['fixed_code']}\n```\n"
             prompt += """
 IMPORTANT INSTRUCTIONS:
@@ -172,7 +177,7 @@ No similar examples were found. Provide a best‑practice fix using standard lib
             self._cache_response(cache_key, response)
             self._update_vector_store(chunk_dict, response)
 
-            # --- Save response to markdown file for review ---
+            # Save response to markdown file for review
             output_file = "llm_fixes.md"
             with open(output_file, "a") as f:
                 f.write(f"## {file_name}\n\n")

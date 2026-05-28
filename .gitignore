@@ -9,6 +9,7 @@ vector_store/metadata.pkl
 dataset/
 <<<<<<< HEAD
 rag-fix/
+rag/chroma_db_reranker_ready
 __pycache__/
 *.pyc
 

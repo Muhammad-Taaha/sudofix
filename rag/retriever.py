@@ -1,101 +1,132 @@
 # rag/retriever.py
-import numpy as np
-import pandas as pd
+import os
+import torch
 import chromadb
-from chromadb.utils import embedding_functions
 from sentence_transformers import SentenceTransformer
-import re
-from typing import List, Dict, Any
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import numpy as np
+
+# Force offline mode (use cached models)
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+os.environ["HF_HUB_OFFLINE"] = "1"
 
 class VulnerabilityRetriever:
-    def __init__(self, data_path: str = "vector_store/filtered_dataset_with_embeddings.parquet"):
-        # Load data
-        self.df = pd.read_parquet(data_path)
-        # Embeddings are stored as list of floats in column 'embedding'
-        self.embeddings = np.vstack(self.df['embedding'].values)
-        self.metadata = self.df[['pattern', 'language', 'fixed_code', 'vulnerable_code']].to_dict('records')
-        
-        # Load embedding model (for encoding user queries)
-        self.encoder = SentenceTransformer(
-                "BAAI/bge-small-en-v1.5",
-                device="cpu"
-            )
-                    
-        # Build Chroma collection
-        self.client = chromadb.Client()
-        self.collection = self.client.create_collection(
-            name="vuln_fixes",
-            embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(model_name="BAAI/bge-large-en-v1.5")
-        )
-        
-        # Add documents in batches
-        batch_size = 100
-        for i in range(0, len(self.df), batch_size):
-            batch = self.df.iloc[i:i+batch_size]
-            self.collection.add(
-                documents=batch['fixed_code'].tolist(),  # what we retrieve
-                metadatas=batch[['pattern', 'language']].to_dict('records'),
-                ids=[f"id_{j}" for j in range(i, i+len(batch))]
-            )
-        print(f"Vector store ready with {self.collection.count()} documents")
+    def __init__(self, chroma_dir: str = "./chroma_db_reranker_ready"):
+        # Load ChromaDB collection (already built with BGE-M3 and structured passages)
+        self.client = chromadb.PersistentClient(path=chroma_dir)
+        collections = self.client.list_collections()
+        if not collections:
+            raise RuntimeError("No ChromaDB collection found")
+        self.collection = collections[0]  # assume it's the correct one
+        print(f"Loaded collection '{self.collection.name}' with {self.collection.count()} docs")
 
-    def infer_pattern_and_language(self, query: str) -> Dict[str, str]:
-        """Simple rule-based inference. Can be replaced with an LLM."""
-        query_lower = query.lower()
-        pattern = "misc"
-        if re.search(r'sql|database|injection', query_lower):
-            pattern = "sql_injection"
-        elif re.search(r'command|exec|shell|os', query_lower):
-            pattern = "command_injection"
-        elif re.search(r'xss|script|alert|cross.?site', query_lower):
-            pattern = "xss"
-        elif re.search(r'auth|login|permission|access.?control', query_lower):
-            pattern = "auth"
-        elif re.search(r'file|path|traversal|directory', query_lower):
-            pattern = "file"
-        elif re.search(r'crypto|encrypt|decrypt|secret|key', query_lower):
-            pattern = "crypto"
-        elif re.search(r'deserialization|pickle|unserialize', query_lower):
-            pattern = "deserialization"
-        # Infer language
-        language = "unknown"
-        if "python" in query_lower:
-            language = "python"
-        elif "javascript" in query_lower or "js" in query_lower:
-            language = "javascript"
-        elif "java" in query_lower:
-            language = "java"
-        elif "c++" in query_lower or "cpp" in query_lower:
-            language = "cpp"
-        elif "go" in query_lower:
-            language = "go"
-        elif "rust" in query_lower:
-            language = "rust"
-        return {"pattern": pattern, "language": language}
+        # Load embedding model (same as used during indexing)
+        self.embed_model = SentenceTransformer("BAAI/bge-m3", device="cuda" if torch.cuda.is_available() else "cpu")
 
-    def retrieve_fixes(self, query: str, top_k: int = 5) -> List[Dict]:
-        """Retrieve similar fixes with metadata filtering."""
-        inferred = self.infer_pattern_and_language(query)
-        # Build filter condition
-        filter_condition = {}
-        if inferred['pattern'] != "misc":
-            filter_condition['pattern'] = inferred['pattern']
-        if inferred['language'] != "unknown":
-            filter_condition['language'] = inferred['language']
-        
-        # Query with filter
+        # Load reranker (cross-encoder)
+        self.reranker_name = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+        self.reranker_tokenizer = AutoTokenizer.from_pretrained(self.reranker_name)
+        self.reranker_model = AutoModelForSequenceClassification.from_pretrained(self.reranker_name).to(self.embed_model.device)
+        self.reranker_model.eval()
+
+        # Config
+        self.top_k_retrieve = 20   # initial dense retrieval
+        self.top_k_final = 5       # after reranking
+
+    def _encode_query(self, query_text: str) -> np.ndarray:
+        """Encode query exactly as during indexing (no prefix, as your DB was built without)."""
+        return self.embed_model.encode([query_text], normalize_embeddings=True)[0]
+
+    def _rerank(self, query: str, documents: list) -> list:
+        """Rerank documents using cross-encoder, return sorted list."""
+        pairs = [(query, doc) for doc in documents]
+        scores = []
+        with torch.no_grad():
+            for i in range(0, len(pairs), 16):
+                batch = pairs[i:i+16]
+                inputs = self.reranker_tokenizer(batch, padding=True, truncation=True, max_length=512, return_tensors="pt").to(self.embed_model.device)
+                logits = self.reranker_model(**inputs).logits
+                scores.extend(logits.squeeze().tolist())
+        combined = sorted(zip(documents, scores), key=lambda x: x[1], reverse=True)
+        return [doc for doc, _ in combined]
+
+    def retrieve_fixes(self, vulnerable_code: str, vulnerability_type: str = None, language: str = None, top_k: int = None) -> list:
+        """
+        Retrieve top-k fixed code examples.
+        Optionally filter by vulnerability_type and language (if known from SAST).
+        """
+        if top_k is None:
+            top_k = self.top_k_final
+
+        # 1. Dense retrieval with proper ChromaDB filter
+        q_emb = self._encode_query(vulnerable_code)
+
+        # Build filter condition using $and for multiple fields
+        if vulnerability_type and language:
+            where_clause = {
+                "$and": [
+                    {"pattern": vulnerability_type},
+                    {"language": language}
+                ]
+            }
+        elif vulnerability_type:
+            where_clause = {"pattern": vulnerability_type}
+        elif language:
+            where_clause = {"language": language}
+        else:
+            where_clause = None
+
         results = self.collection.query(
-            query_texts=[query],
-            where=filter_condition if filter_condition else None,
-            n_results=top_k
+            query_embeddings=[q_emb.tolist()],
+            n_results=self.top_k_retrieve,
+            where=where_clause,
+            include=["documents", "metadatas"]
         )
-        # Format results
-        retrieved = []
-        for i in range(len(results['ids'][0])):
-            retrieved.append({
-                'fixed_code': results['documents'][0][i],
-                'pattern': results['metadatas'][0][i]['pattern'],
-                'language': results['metadatas'][0][i]['language'],
-                'similarity_score': results['distances'][0][i] if 'distances' in results else None
+        docs = results['documents'][0]
+        metas = results['metadatas'][0]
+
+        # If no results with filter, fall back to unfiltered retrieval
+        if not docs and where_clause is not None:
+            print(f"⚠️ No results with filter (pattern={vulnerability_type}, lang={language}), falling back to unfiltered.")
+            results = self.collection.query(
+                query_embeddings=[q_emb.tolist()],
+                n_results=self.top_k_retrieve,
+                where=None,
+                include=["documents", "metadatas"]
+            )
+            docs = results['documents'][0]
+            metas = results['metadatas'][0]
+
+        if not docs:
+            return []
+
+        # 2. Rerank
+        reranked_docs = self._rerank(vulnerable_code, docs)
+
+        # 3. Align metadata with reranked order
+        doc_to_meta = {doc: meta for doc, meta in zip(docs, metas)}
+        reranked_metas = [doc_to_meta[doc] for doc in reranked_docs[:top_k]]
+        reranked_docs = reranked_docs[:top_k]
+
+        # 4. Extract fix snippets from structured documents (SECURE FIX section)
+        fixes = []
+        for doc, meta in zip(reranked_docs, reranked_metas):
+            # Extract the fix part from the passage
+            if "SECURE FIX:" in doc:
+                fix_part = doc.split("SECURE FIX:")[1].split("TASK:")[0].strip()
+            else:
+                fix_part = doc
+            # Extract vulnerable code example if present
+            vuln_example = ""
+            if "VULNERABLE CODE:" in doc:
+                try:
+                    vuln_example = doc.split("VULNERABLE CODE:")[1].split("SECURE FIX:")[0].strip()
+                except:
+                    vuln_example = ""
+            fixes.append({
+                'fixed_code': fix_part,
+                'pattern': meta.get('pattern'),
+                'language': meta.get('language'),
+                'vulnerable_code_example': vuln_example
             })
-        return retrieved
+        return fixes
