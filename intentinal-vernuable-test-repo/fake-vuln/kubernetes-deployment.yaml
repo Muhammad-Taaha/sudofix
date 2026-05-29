@@ -1,0 +1,209 @@
+# Kubernetes Deployment with IaC Security Vulnerabilities
+# This file contains intentional security misconfigurations for testing
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vulnerable-app
+
+---
+# Vulnerability 1: Secret with base64-encoded credentials (easily decoded)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secrets
+  namespace: vulnerable-app
+type: Opaque
+data:
+  # Vulnerability 2: Hardcoded secrets (base64 encoded)
+  database-password: U3VwZXJTZWNyZXRQYXNzd29yZDEyMw==  # SuperSecretPassword123
+  api-key: c2stMTIzNDU2Nzg5MGFiY2RlZg==  # sk-1234567890abcdef
+  aws-access-key: QUtJQUlPU0ZPRE5ON0VYQU1QTEU=  # AKIAIOSFODNN7EXAMPLE
+
+---
+# ConfigMap with sensitive information
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: vulnerable-app
+data:
+  # Vulnerability 3: Sensitive data in ConfigMap
+  DATABASE_URL: "mysql://admin:password@db-service:3306/production"
+  JWT_SECRET: "my-jwt-secret-key-12345"
+  DEBUG: "true"
+
+---
+# Vulnerable Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vulnerable-webapp
+  namespace: vulnerable-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vulnerable-webapp
+  template:
+    metadata:
+      labels:
+        app: vulnerable-webapp
+    spec:
+      # Vulnerability 4: Running as root (no securityContext)
+      # Vulnerability 5: No pod security policies
+      containers:
+      - name: webapp
+        image: vulnerable-app:latest
+        ports:
+        - containerPort: 8080
+        - containerPort: 9229  # Debug port
+        
+        # Vulnerability 6: Privileged container
+        securityContext:
+          privileged: true
+          allowPrivilegeEscalation: true
+          runAsUser: 0  # Running as root
+          runAsNonRoot: false
+          capabilities:
+            add:
+              - ALL
+          readOnlyRootFilesystem: false
+        
+        # Vulnerability 7: No resource limits
+        # (missing resources.limits and resources.requests)
+        
+        env:
+        # Vulnerability 8: Secrets in environment variables as plain text
+        - name: DATABASE_PASSWORD
+          value: "SuperSecretPassword123"
+        - name: API_KEY
+          value: "sk-1234567890abcdef"
+        - name: DEBUG
+          value: "true"
+        
+        # Vulnerability 9: Mounting sensitive volumes
+        volumeMounts:
+        - name: host-root
+          mountPath: /host
+          readOnly: false
+        - name: docker-socket
+          mountPath: /var/run/docker.sock
+        
+      # Vulnerability 10: Host network access
+      hostNetwork: true
+      hostPID: true
+      hostIPC: true
+      
+      # Vulnerability 11: Mounting sensitive host paths
+      volumes:
+      - name: host-root
+        hostPath:
+          path: /
+          type: Directory
+      - name: docker-socket
+        hostPath:
+          path: /var/run/docker.sock
+          type: Socket
+      
+      # Vulnerability 12: No image pull policy (may use cached images)
+      # imagePullPolicy not set
+      
+      # Vulnerability 13: Automounting service account tokens
+      automountServiceAccountToken: true
+
+---
+# Service with insecure configuration
+apiVersion: v1
+kind: Service
+metadata:
+  name: vulnerable-service
+  namespace: vulnerable-app
+spec:
+  type: NodePort
+  # Vulnerability 14: Exposing service on all interfaces
+  externalIPs:
+    - 0.0.0.0
+  ports:
+  # Vulnerability 15: Exposing debugging and admin ports
+  - name: http
+    port: 8080
+    targetPort: 8080
+    nodePort: 30080
+  - name: debug
+    port: 9229
+    targetPort: 9229
+    nodePort: 30229
+  - name: admin
+    port: 9090
+    targetPort: 9090
+    nodePort: 30090
+  selector:
+    app: vulnerable-webapp
+
+---
+# Service Account with excessive permissions
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vulnerable-sa
+  namespace: vulnerable-app
+
+---
+# Vulnerability 16: ClusterRoleBinding with cluster-admin
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vulnerable-cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: vulnerable-sa
+  namespace: vulnerable-app
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# Ingress with security issues
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vulnerable-ingress
+  namespace: vulnerable-app
+  annotations:
+    # Vulnerability 17: No TLS/HTTPS enforcement
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    # Vulnerability 18: Permissive CORS
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+spec:
+  rules:
+  - host: vulnerable-app.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: vulnerable-service
+            port:
+              number: 8080
+  # Vulnerability 19: No TLS configuration
+  # (missing tls section)
+
+---
+# PersistentVolume with insecure permissions
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vulnerable-pv
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    # Vulnerability 20: ReadWriteMany allows multiple pods to write
+    - ReadWriteMany
+  hostPath:
+    path: /data
+    type: DirectoryOrCreate

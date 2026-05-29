@@ -1,0 +1,131 @@
+# docker-compose.yml with IaC Security Vulnerabilities
+# This file contains intentional security misconfigurations for testing
+
+version: '3.8'
+
+services:
+  # Vulnerability 1: Database with default/weak credentials
+  database:
+    image: mysql:5.7
+    environment:
+      # Hardcoded weak credentials
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: myapp
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin123
+    ports:
+      # Vulnerability 2: Database exposed to host network
+      - "3306:3306"
+    volumes:
+      # Vulnerability 3: World-writable volumes
+      - ./data:/var/lib/mysql:rw
+    # Vulnerability 4: Running in privileged mode
+    privileged: true
+    # Vulnerability 5: Disabling security features
+    security_opt:
+      - seccomp:unconfined
+      - apparmor:unconfined
+
+  # Vulnerability 6: Redis without authentication
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    command: redis-server --protected-mode no
+    # No password configured
+
+  # Vulnerability 7: MongoDB without authentication
+  mongodb:
+    image: mongo:latest
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    ports:
+      # Exposed to external network
+      - "27017:27017"
+    # Vulnerability 8: No resource limits
+    # (missing mem_limit, cpus, etc.)
+
+  # Application service with multiple vulnerabilities
+  webapp:
+    build: .
+    ports:
+      # Vulnerability 9: Exposing debugging ports
+      - "5000:5000"
+      - "9229:9229"  # Node.js debug port
+      - "5678:5678"  # Python debug port
+    environment:
+      # Vulnerability 10: Hardcoded secrets in environment
+      DATABASE_URL: mysql://admin:admin123@database:3306/myapp
+      SECRET_KEY: my-super-secret-key-12345
+      JWT_SECRET: jwt-secret-token
+      API_KEY: sk-1234567890abcdef
+      DEBUG: "true"
+      NODE_ENV: development
+    volumes:
+      # Vulnerability 11: Mounting sensitive host directories
+      - /:/host:rw
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./app:/app:rw
+    # Vulnerability 12: Running as root
+    user: root
+    # Vulnerability 13: Network mode host (unrestricted network access)
+    network_mode: "host"
+    depends_on:
+      - database
+      - redis
+      - mongodb
+    # Vulnerability 14: Disabling container isolation
+    cap_add:
+      - ALL
+    # Vulnerability 15: Read-only rootfs disabled
+    read_only: false
+
+  # Vulnerability 16: PostgreSQL with weak settings
+  postgres:
+    image: postgres:11
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: production_db
+    ports:
+      - "5432:5432"
+    command: postgres -c ssl=off -c log_statement=none
+
+  # Vulnerability 17: Elasticsearch without security
+  elasticsearch:
+    image: elasticsearch:7.9.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+
+  # Vulnerability 18: Jenkins with default admin
+  jenkins:
+    image: jenkins/jenkins:lts
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    environment:
+      JENKINS_ADMIN_ID: admin
+      JENKINS_ADMIN_PASSWORD: admin
+    volumes:
+      - jenkins_home:/var/jenkins_home
+
+# Vulnerability 19: External network with no isolation
+networks:
+  default:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "true"
+
+# Vulnerability 20: Unencrypted volumes
+volumes:
+  jenkins_home:
+    driver: local
+    driver_opts:
+      type: none
+      device: /tmp/jenkins
+      o: bind
