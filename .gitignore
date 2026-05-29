@@ -2,27 +2,30 @@
 __pycache__/
 *.pyc
 
-
 .env
+
+# Vector store
+vector_store/
 vector_store/docs.index
 vector_store/metadata.pkl
+
+# Dataset
 dataset/
-<<<<<<< HEAD
 rag/
-
-__pycache__/
-*.pyc
-
-Testing_files_for_scancode/
-scancode-toolkit/
-
-
-scancode-toolkit/
-Testing_files_for_scancode/repos_testing/
-Testing_files_for_scancode/
-=======
 rag/datasetinrag
 rag/datasetinrag.zip
 rag/cleaned_vulnerability_dataset.csv
-vector_store/
->>>>>>> origin/rag-part
+
+# Logs & DB
+*.log
+*.sqlite3
+*.db
+
+# Scancode
+Testing_files_for_scancode/
+scancode-toolkit/
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
