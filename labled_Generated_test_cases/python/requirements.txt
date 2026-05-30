@@ -1,0 +1,16 @@
+# requirements_vulnerable.txt
+
+# VULNERABILITY: pandas 2.0.3 has known CVE-2023-40888 (ReDoS in read_csv with malformed file)
+# Also affected by CVE-2023-27476 (arbitrary code execution via pickle deserialization)
+pandas==2.0.3
+
+# VULNERABILITY: numpy 1.24.3 contains CVE-2021-41495 (buffer overflow in ndarray functions)
+# Also CVE-2019-6446 (use of unsafe pickle by default)
+numpy==1.24.3
+
+# VULNERABILITY: scikit-learn 1.3.0 uses unsafe pickle serialization (CVE-2022-41945)
+# and allows arbitrary code execution via crafted model files
+scikit-learn==1.3.0
+
+# Note: All three packages are outdated and have publicly disclosed exploits.
+# No safe versions are pinned; no hash verification.
