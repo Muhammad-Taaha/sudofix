@@ -1,0 +1,5 @@
+# Install Node.js
+cd DeepVulnerableEngineJS
+node app.js config.json.example
+# Run the vulnerability trigger script
+python3 trigger_deep_vulns_js.py app.js

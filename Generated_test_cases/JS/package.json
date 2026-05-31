@@ -1,0 +1,17 @@
+
+---
+
+## package.json
+
+```json
+{
+  "name": "deep-vulnerable-engine-js",
+  "version": "1.0.0",
+  "description": "A JavaScript engine with deep vulnerabilities for security testing",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "author": "",
+  "license": "MIT"
+}

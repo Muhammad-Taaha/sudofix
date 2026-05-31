@@ -1,0 +1,15 @@
+DeepVulnerableEngineJS/
+├── package.json
+├── app.js
+├── config.json.example
+├── trigger_deep_vulns_js.py
+├── src/
+│   ├── memorypool.js
+│   ├── jobmanager.js
+│   ├── cleaner.js
+│   ├── pipeline.js
+│   ├── resourcehandler.js
+│   ├── infoleak.js
+│   ├── logger.js
+│   ├── server.js
+│   ├── threadpool.js (optional)
