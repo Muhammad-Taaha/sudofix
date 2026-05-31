@@ -1,0 +1,21 @@
+DeepVulnerableEngineGo/
+├── go.mod
+├── main.go
+├── config/
+│   ├── config.go
+├── pool/
+│   ├── memorypool.go
+├── jobs/
+│   ├── jobmanager.go
+├── cleaner/
+│   ├── cleaner.go
+├── pipeline/
+│   ├── pipeline.go
+├── handler/
+│   ├── resource.go
+├── leak/
+│   ├── leak.go
+├── logger/
+│   ├── logger.go
+└── server/
+    ├── server.go
