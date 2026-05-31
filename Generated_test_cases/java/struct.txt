@@ -1,0 +1,29 @@
+DeepVulnerableEngineJava/
+├── pom.xml
+└── src/
+    └── main/
+        └── java/
+            └── engine/
+                ├── Main.java
+                ├── config/
+                │   ├── AppConfig.java
+                │   └── ConfigReader.java
+                ├── pool/
+                │   ├── MemoryPool.java
+                │   └── DirectBufferPool.java
+                ├── jobs/
+                │   └── JobManager.java
+                ├── cleaner/
+                │   └── DirectoryCleaner.java
+                ├── pipeline/
+                │   └── PipelineExecutor.java
+                ├── handler/
+                │   └── ResourceHandler.java
+                ├── leak/
+                │   └── InfoLeakLogger.java
+                ├── log/
+                │   └── Logger.java
+                ├── net/
+                │   └── SimpleHttpServer.java
+                └── util/
+                    └── ThreadPool.java
