@@ -1,0 +1,16 @@
+DeepVulnerableEngineC/
+├── CMakeLists.txt
+├── README.md
+└── src/
+    ├── common.h
+    ├── config_reader.h / .c
+    ├── thread_pool.h / .c
+    ├── logger.h / .c
+    ├── http_server.h / .c
+    ├── memory_pool.h / .c
+    ├── job_queue.h / .c
+    ├── directory_cleaner.h / .c
+    ├── pipeline.h / .c
+    ├── resource_handler.h / .c
+    ├── info_leak.h / .c
+    └── main.c
