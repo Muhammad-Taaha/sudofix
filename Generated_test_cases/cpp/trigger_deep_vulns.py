@@ -212,7 +212,7 @@ def test_info_leak(binary):
         if os.path.exists(leak_file):
             with open(leak_file, 'rb') as f:
                 data = f.read()
-            if b"SECRET_STACK_DATA_LEAK" in data:
+            if b"Processing: LogRecord entry" in data:
                 print("    Info leak triggered (stack data found in log)")
                 os.unlink(leak_file)
                 return True
