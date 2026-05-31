@@ -1,0 +1,10 @@
+Build & Run
+
+cd DeepVulnerableEngineGo
+go mod init github.com/deepvuln/engine
+go build -o DeepVulnerableEngineGo .
+# Create a minimal config.json
+echo '{"port":8080, "log_file":"engine.log", "pool_size":1048576, "jobs":[]}' > config.json
+./DeepVulnerableEngineGo config.json
+# To test vulnerabilities (after building):
+python3 trigger_deep_vulns_go.py ./DeepVulnerableEngineGo
