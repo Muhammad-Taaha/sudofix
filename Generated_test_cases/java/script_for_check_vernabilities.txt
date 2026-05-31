@@ -1,0 +1,4 @@
+Usage: Build with mvn package, then run the script:
+
+bash
+python3 trigger_deep_vulns_java.py ./target/DeepVulnerableEngineJava.jar
