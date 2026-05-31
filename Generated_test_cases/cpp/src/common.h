@@ -16,9 +16,3 @@
 #include <filesystem>
 #include <sys/stat.h>
 #include <unistd.h>
-
-#ifdef USE_VULNERABLE
-#define VULN_ON 1
-#else
-#define VULN_ON 0
-#endif

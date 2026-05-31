@@ -29,7 +29,6 @@ int main(int argc, char* argv[]) {
         HttpServer httpServer(io_context, config.port, &memPool);
         std::thread httpThread([&]() { httpServer.run(); });
 
-        // Process jobs
         JobManager jobManager;
         for (auto& job : config.jobs) {
             if (job.type == "transform") {

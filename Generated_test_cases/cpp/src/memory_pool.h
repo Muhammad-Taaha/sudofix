@@ -15,8 +15,5 @@ private:
     char* pool_start = nullptr;
     size_t pool_size = 0;
     FreeNode* free_list = nullptr;
-#if !VULN_ON
-    std::mutex mutex_;
-#endif
     size_t used_memory = 0;
 };

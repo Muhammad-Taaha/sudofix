@@ -12,9 +12,6 @@ MemoryPool::~MemoryPool() {
 }
 
 void* MemoryPool::alloc(size_t size) {
-#if !VULN_ON
-    std::lock_guard<std::mutex> lock(mutex_);
-#endif
     if (free_list) {
         FreeNode* node = free_list;
         free_list = node->next;
@@ -33,31 +30,16 @@ void* MemoryPool::alloc(size_t size) {
 
 void MemoryPool::free(void* ptr) {
     if (!ptr) return;
-#if !VULN_ON
-    std::lock_guard<std::mutex> lock(mutex_);
-#endif
     FreeNode* node = static_cast<FreeNode*>(ptr);
     node->next = free_list;
     free_list = node;
 }
 
 void* MemoryPool::allocBuffer(size_t input_size, size_t multiplier, size_t extra) {
-    size_t total;
-#if VULN_ON
-    // VULN-1: integer overflow possible, no bounds check
-    total = input_size * multiplier + extra;
-#else
-    if (multiplier != 0 && input_size > (SIZE_MAX - extra) / multiplier) {
-        return nullptr;
-    }
-    total = input_size * multiplier + extra;
-#endif
+    size_t total = input_size * multiplier + extra;
     return alloc(total);
 }
 
 size_t MemoryPool::getUsedMemory() {
-#if !VULN_ON
-    std::lock_guard<std::mutex> lock(mutex_);
-#endif
     return used_memory;
 }

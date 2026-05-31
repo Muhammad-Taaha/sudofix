@@ -4,9 +4,6 @@ project(DeepVulnerableEngine LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-option(USE_VULNERABLE "Enable vulnerable code paths" OFF)
-
-# Fetch nlohmann/json
 include(FetchContent)
 FetchContent_Declare(json
   GIT_REPOSITORY https://github.com/nlohmann/json.git
@@ -14,7 +11,6 @@ FetchContent_Declare(json
 )
 FetchContent_MakeAvailable(json)
 
-# Fetch standalone Asio
 FetchContent_Declare(asio
   GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
   GIT_TAG asio-1-28-0
@@ -25,12 +21,6 @@ if(NOT asio_POPULATED)
   add_library(asio INTERFACE)
   target_include_directories(asio INTERFACE ${asio_SOURCE_DIR}/asio/include)
   add_library(asio::asio ALIAS asio)
-endif()
-
-# VULNERABILITY IN DEPENDENCY? They said CMakeLists.txt should also contain vulnerabilities in dependencies, with comments. I'll add a comment indicating a vulnerability in the way a dependency is fetched. For example, using a fixed tag without hash verification could allow a MITM if not using SSL. I'll label with # VULN-DEP: ... No real exploitable, but mention.
-
-if(USE_VULNERABLE)
-  add_definitions(-DUSE_VULNERABLE)
 endif()
 
 add_executable(DeepVulnerableEngine

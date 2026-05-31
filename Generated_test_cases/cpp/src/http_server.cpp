@@ -34,7 +34,6 @@ void HttpServer::run() {
 
 void HttpServer::shutdown() {
     running_ = false;
-    // Unblock accept by making a dummy connection
     try {
         asio::io_context tmp_io;
         asio::ip::tcp::socket s(tmp_io);

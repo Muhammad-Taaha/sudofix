@@ -3,7 +3,6 @@
 #include <stdexcept>
 
 void processFiles(const std::string& fileA, const std::string& fileB) {
-#if VULN_ON
     FILE* fA = nullptr;
     char* buffer = nullptr;
     try {
@@ -17,17 +16,8 @@ void processFiles(const std::string& fileA, const std::string& fileB) {
         delete[] buffer;
     } catch (...) {
         if (fA) fclose(fA);
-        // VULN-6: double free of buffer
         delete[] buffer;
-        delete[] buffer;   // VULN-6
+        delete[] buffer;
         throw;
     }
-#else
-    auto fA = std::unique_ptr<FILE, decltype(&fclose)>(fopen(fileA.c_str(), "r"), &fclose);
-    if (!fA) throw std::runtime_error("Cannot open file A");
-    auto buf = std::make_unique<char[]>(1024);
-    auto fB = std::unique_ptr<FILE, decltype(&fclose)>(fopen(fileB.c_str(), "r"), &fclose);
-    if (!fB) throw std::runtime_error("Cannot open file B");
-    // use files and buffer safely
-#endif
 }
